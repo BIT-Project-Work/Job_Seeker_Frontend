@@ -10,6 +10,7 @@ import {
     CheckCircle
 } from 'lucide-react'
 import { useState } from "react"
+import { validateEmail, validatePassword } from "../../utils/helper";
 
 const Login = () => {
 
@@ -26,19 +27,6 @@ const Login = () => {
         success: false
     });
 
-    // Validation functions
-    const validateEmail = (email) => {
-        if (!email.trim()) return 'Email is required';
-        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-        if (!emailRegex.test(email)) return 'Please enter a valid email address';
-        return '';
-    }
-
-    const validatePassword = (password) => {
-        if (!password) return 'Password is required';
-        return '';
-    };
-
     // Handle Input changes
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -49,7 +37,7 @@ const Login = () => {
 
         // Clear error when user starts typing
         if (formState.errors[name]) {
-            setFormData(prev => prev({
+            setFormState(prev => ({
                 ...prev,
                 errors: { ...prev.errors, [name]: '' }
             }))
@@ -187,7 +175,7 @@ const Login = () => {
                         )}
                     </div>
 
-                    {/* Submit Error */}
+                    {/* Submit Button */}
                     <button
                         className="w-full bg-linear-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                         type="submit"

@@ -14,8 +14,12 @@ import {
 } from 'lucide-react'
 import { useState } from 'react';
 import { validateAvatar, validateEmail, validatePassword } from '../../utils/helper';
+import { axiosInstance } from '../../utils/axiosInstance';
+import { useAuth } from '../../context/AuthContext';
 
 const SignUp = () => {
+
+    const { login } = useAuth();
 
     const [formData, setFormData] = useState({
         fullName: '',
@@ -32,8 +36,6 @@ const SignUp = () => {
         avatarPreview: null,
         success: false
     })
-
-
 
     // Handle Input changes
     const handleInputChange = (e) => {
@@ -115,6 +117,43 @@ const SignUp = () => {
         setFormState((prev) => ({ ...prev, loading: true }))
 
         try {
+            let avatarUrl = "";
+
+            // Upload image if present
+            if (formData.avatar) {
+                const imgUploadRes = await uploadImage(formData.avatar);
+                avatarUrl = imgUploadRes.imageUrl || "";
+            }
+
+            const response = await axiosInstance.post(API_PATHS.AUTH.REGISTER, {
+                name: formData.fullName,
+                email: formData.email,
+                password: formData.password,
+                role: formData.role,
+                avatar: formData.avatar || "",
+            })
+
+            // Handle successful registration
+            setFormState((prev) => ({
+                ...prev,
+                loading: false,
+                success: true,
+                errors: {}
+            }));
+
+            const { token } = response.data;
+
+            if (token) {
+                login(response.data, token)
+
+                // Redirect based on role
+                setTimeout(() => {
+                    window.location.href =
+                        formData.role === 'employer'
+                            ? '/employer-dashboard'
+                            : '/find-jobs'
+                }, 2000)
+            }
 
         } catch (error) {
             console.log("error", error)

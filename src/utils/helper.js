@@ -33,3 +33,25 @@ export const validateAvatar = (file) => {
 
     return "";
 }
+
+// export const getInitials = (name) => {
+//     return name
+//         .split(" ")
+//         .map((word) => word.chatAt(0))
+//         .join("")
+//         .toUpperCase()
+//         .slice(0, 2);
+// }
+
+export const getInitials = (name = "") => {
+    if (typeof name !== "string") return "";
+
+    return name
+        .trim()
+        .split(" ")
+        .filter(Boolean)
+        .map(word => word.charAt(0)) // ✅ Typo fix: was `chatAt`
+        .join("")
+        .toUpperCase()
+        .slice(0, 2);
+};

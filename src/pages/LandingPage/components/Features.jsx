@@ -56,7 +56,7 @@ const Features = () => {
 
                         <div className="space-y-8">
                             {employerFeatures.map((feature, index) => (
-                                <div className="group flex items-start space-x-4 p-6 rounded-2xl hover:bg-purple-50 transition-all duration-300 cursor-pointer">
+                                <div key={index} className="group flex items-start space-x-4 p-6 rounded-2xl hover:bg-purple-50 transition-all duration-300 cursor-pointer">
                                     <div className="shrink-0 w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors" key={index}>
                                         <feature.icon className="w-6 h-6 text-purple-600" />
                                     </div>

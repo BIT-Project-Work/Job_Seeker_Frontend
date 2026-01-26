@@ -83,7 +83,7 @@ const ManageJobs = () => {
   // Toggle the status of a job
   const handleStatusChange = async (jobId) => {
     try {
-      const response = await axiosInstance.put(
+      const response = await axiosInstance.patch(
         API_PATHS.JOBS.TOGGLE_CLOSE(jobId)
       );
       getPostedJobs(true);

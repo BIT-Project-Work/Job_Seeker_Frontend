@@ -25,7 +25,7 @@ const ApplicantProfilePreview = ({
         setLoading(true);
 
         try {
-            const response = await axiosInstance.put(
+            const response = await axiosInstance.patch(
                 API_PATHS.APPLICATIONS.UPDATE_STATUS(selectedApplicant._id),
                 { status: newStatus }
             );

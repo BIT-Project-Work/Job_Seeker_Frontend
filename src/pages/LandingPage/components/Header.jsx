@@ -23,7 +23,7 @@ const Header = () => {
                         <div className="w-8 h-8 bg-linear-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
                             <Briefcase className="w-5 h-5 text-white" />
                         </div>
-                        <span className="text-xl font-bold text-gray-900">JobPortal</span>
+                        <span className="text-xl font-bold text-gray-900">JobSeeker</span>
                     </div>
 
                     {/* Navigation links - Hidden on mobile */}

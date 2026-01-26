@@ -76,7 +76,7 @@ const Login = () => {
             const response = await axiosInstance.post(API_PATHS.AUTH.LOGIN, {
                 email: formData.email,
                 password: formData.password,
-                rememberMe: formData.rememberMe,
+                // rememberMe: formData.rememberMe,
             });
 
             setFormState(prev => ({

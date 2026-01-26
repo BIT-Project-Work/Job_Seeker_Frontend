@@ -101,7 +101,7 @@ const DashboardLayout = ({ activeMenu, children }) => {
                             <div className="h-8 w-8 bg-linear-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
                                 <Briefcase className="h-5 w-5 text-white" />
                             </div>
-                            <span className="text-gray-900 font-bold text-xl">JobPortal</span>
+                            <span className="text-gray-900 font-bold text-xl">JobSeeker</span>
                         </Link>
                     ) : (
                         <div className="h-8 w-8 bg-linear-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center">

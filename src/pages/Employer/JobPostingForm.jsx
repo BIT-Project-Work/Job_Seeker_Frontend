@@ -79,7 +79,7 @@ const JobPostingForm = () => {
         };
 
         try {
-            const response = jobId ? await axiosInstance.put(API_PATHS.JOBS.UPDATE_JOB(jobId), jobPayload)
+            const response = jobId ? await axiosInstance.patch(API_PATHS.JOBS.UPDATE_JOB(jobId), jobPayload)
                 : await axiosInstance.post(API_PATHS.JOBS.POST_JOB, jobPayload)
 
             if (response.status === 200 || response.status === 201) {

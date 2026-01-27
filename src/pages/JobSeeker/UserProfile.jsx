@@ -64,7 +64,7 @@ const UserProfile = () => {
         setSaving(true);
 
         try {
-            const response = await axiosInstance.put(
+            const response = await axiosInstance.patch(
                 API_PATHS.AUTH.UPDATE_PROFILE,
                 formData
             );

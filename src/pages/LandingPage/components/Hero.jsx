@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom"
 const Hero = () => {
 
     const isAuthenticated = true;
-    const user = { fullName: "Lemon", role: "employer" }
+    const user = { fullName: "Lemon", role: "EMPLOYER" }
 
     const navigate = useNavigate();
 
@@ -67,7 +67,7 @@ const Hero = () => {
                             className="bg-white border-2 border-gray-200 text-gray-700 px-8 py-4 rounded-xl font-semibold text-lg hover:border-gray-300 hover:bg-gray-50 transition-all duration-300 shadow-sm hover:shadow-md"
                             onClick={() => {
                                 navigate(
-                                    isAuthenticated && user?.role === "employer"
+                                    isAuthenticated && user?.role === "EMPLOYER"
                                         ? "/employer-dashboard" : "/login"
                                 )
                             }}

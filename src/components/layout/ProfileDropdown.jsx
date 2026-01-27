@@ -31,7 +31,7 @@ const ProfileDropdown = ({
                 }
                 <div className="hidden sm:block text-left">
                     <p className="text-sm font-medium text-gray-900">{companyName}</p>
-                    <p className="text-xs text-gray-500">Employer</p>
+                    <p className="text-xs text-gray-500">{userRole === 'JOBSEEKER' ? 'Job Seeker' : 'Employer'}</p>
                 </div>
                 <ChevronDown className="h-4 w-4 text-gray-400" />
             </button>
@@ -44,7 +44,7 @@ const ProfileDropdown = ({
                     </div>
                     <a
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                        onClick={() => navigate(userRole === 'jobseeker' ? '/profile' : '/company-profile')}
+                        onClick={() => navigate(userRole === 'JOBSEEKER' ? '/profile' : '/company-profile')}
                     >
                         View Profile
                     </a>

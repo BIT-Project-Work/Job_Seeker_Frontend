@@ -151,7 +151,7 @@ const SignUp = () => {
                 // Redirect based on role
                 setTimeout(() => {
                     window.location.href =
-                        formData.role === 'employer'
+                        formData.role === 'EMPLOYER'
                             ? '/employer-dashboard'
                             : '/find-jobs'
                 }, 2000)
@@ -344,8 +344,8 @@ const SignUp = () => {
                         <div className="grid grid-cols-2 gap-4">
                             <button
                                 type="button"
-                                onClick={() => handleRoleChange("jobseeker")}
-                                className={`p-4 rounded-lg border-2 transition-all ${formData.role === 'jobseeker' ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-200 hover:border-gray-300"}`}>
+                                onClick={() => handleRoleChange("JOBSEEKER")}
+                                className={`p-4 rounded-lg border-2 transition-all ${formData.role === 'JOBSEEKER' ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-200 hover:border-gray-300"}`}>
                                 <UserCheck className='w-8 h-8 mx-auto mb-2' />
                                 <div className="font-medium">Job Seeker</div>
                                 <div className="text-xs text-gray-500">
@@ -354,8 +354,8 @@ const SignUp = () => {
                             </button>
                             <button
                                 type='button'
-                                onClick={() => handleRoleChange('employer')}
-                                className={`p-4 rounded-lg border-2 transition-all ${formData.role === 'employer' ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-200 hover:border-gray-300"}`}
+                                onClick={() => handleRoleChange('EMPLOYER')}
+                                className={`p-4 rounded-lg border-2 transition-all ${formData.role === 'EMPLOYER' ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-200 hover:border-gray-300"}`}
                             >
                                 <Building2 className='w-8 h-8 mx-auto mb-2' />
                                 <div className="font-medium">Employer</div>

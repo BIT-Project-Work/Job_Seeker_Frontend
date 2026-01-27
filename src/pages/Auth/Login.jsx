@@ -1,5 +1,4 @@
 import { motion } from "framer-motion"
-import { div } from "framer-motion/client";
 import {
     Mail,
     Lock,
@@ -14,10 +13,13 @@ import { validateEmail, validatePassword } from "../../utils/helper";
 import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPaths";
 import { useAuth } from "../../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const Login = () => {
 
     const { login } = useAuth();
+
+    const navigate = useNavigate();
 
     const [formData, setFormData] = useState({
         email: '',
@@ -76,8 +78,14 @@ const Login = () => {
             const response = await axiosInstance.post(API_PATHS.AUTH.LOGIN, {
                 email: formData.email,
                 password: formData.password,
-                rememberMe: formData.rememberMe,
+                // rememberMe: formData.rememberMe,
             });
+
+            const { token, role, user } = response.data;
+
+            if (token) {
+                login(response.data, token);
+            }
 
             setFormState(prev => ({
                 ...prev,
@@ -86,28 +94,30 @@ const Login = () => {
                 errors: {}
             }))
 
-            const { token, role } = response.data;
+            // if (token) {
+            //     login(response.data, token);
 
-            if (token) {
-                login(response.data, token);
-
-                // Redirect based on role
-                setTimeout(() => {
-                    window.location.href =
-                        role === "employer"
-                            ? "/employer-dashboard"
-                            : "/find-jobs";
-                }, 2000)
-            }
+            //     // Redirect based on role
+            //     setTimeout(() => {
+            //         window.location.href =
+            //             role === "EMPLOYER"
+            //                 ? "/employer-dashboard"
+            //                 : "/find-jobs";
+            //     }, 2000)
+            // }
 
             // Redirect based on user role
-            setTimeout(() => {
-                const redirectPath = user.role === 'employer'
-                    ? "/employer-dashboard"
-                    : "/find-jobs";
-                window.location.href = redirectPath;
-            }, 1500);
+            // setTimeout(() => {
+            //     const redirectPath = user.role === 'EMPLOYER'
+            //         ? "/employer-dashboard"
+            //         : "/find-jobs";
+            //     window.location.href = redirectPath;
+            // }, 1500);
 
+            navigate(
+                role === "EMPLOYER" ? "/employer-dashboard" : "/find-jobs",
+                { replace: true }
+            );
 
         } catch (error) {
             setFormState(prev => ({

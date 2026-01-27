@@ -15,7 +15,6 @@ const JobCard = ({ job, onClick, onToggleSave, onApply, saved, hideApply }) => {
         return `${formatNumber(min)}/m`
     };
 
-
     return (
         <div
             className="bg-white rounded-2xl border border-gray-200 p-6 hover:shadow-xl hover:shadow-gray-200 transition-all duration-300 group relative overflow-hidden cursor-pointer"

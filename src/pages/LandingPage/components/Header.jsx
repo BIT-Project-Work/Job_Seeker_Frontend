@@ -23,7 +23,7 @@ const Header = () => {
                         <div className="w-8 h-8 bg-linear-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
                             <Briefcase className="w-5 h-5 text-white" />
                         </div>
-                        <span className="text-xl font-bold text-gray-900">JobPortal</span>
+                        <span className="text-xl font-bold text-gray-900">JobSeeker</span>
                     </div>
 
                     {/* Navigation links - Hidden on mobile */}
@@ -37,7 +37,7 @@ const Header = () => {
                         <a
                             onClick={() => {
                                 navigate(
-                                    isAuthenticated && user?.role === "employer" ? "/employer-dashboard" : "/login"
+                                    isAuthenticated && user?.role === "EMPLOYER" ? "/employer-dashboard" : "/login"
                                 )
                             }}
                             className="text-gray-600 hover:text-gray-900 transition-colors font-medium"
@@ -55,7 +55,7 @@ const Header = () => {
                                 </span>
                                 <a
                                     href={
-                                        user?.role === "employer" ?
+                                        user?.role === "EMPLOYER" ?
                                             "/employer-dashboard"
                                             : "/find-jobs"
                                     }

@@ -34,7 +34,7 @@ const Navbar = () => {
                         <div className="w-8 h-8 bg-linear-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
                             <Briefcase className="w-5 h-5 text-white" />
                         </div>
-                        <span className="text-lg font-bold text-gray-900">JobPortal</span>
+                        <span className="text-lg font-bold text-gray-900">JobSeeker</span>
                     </Link>
 
                     {/* Auth Buttons */}

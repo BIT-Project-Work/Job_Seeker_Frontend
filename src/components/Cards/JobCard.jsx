@@ -1,13 +1,13 @@
 import { Bookmark, Building, Building2, Calendar, MapPin } from "lucide-react"
 import moment from 'moment'
-import { useAuth } from "../../context/AuthContext"
+import { useAuth } from "../../context/useAuth"
 import StatusBadge from "../StatusBadge"
 
 const JobCard = ({ job, onClick, onToggleSave, onApply, saved, hideApply }) => {
 
     const { user } = useAuth();
 
-    const formatSalary = (min, max) => {
+    const formatSalary = (min) => {
         const formatNumber = (num) => {
             if (num >= 1000) return `$${(num / 1000).toFixed(0)}k`;
             return `$${num}`

@@ -12,10 +12,12 @@ import { useState } from "react"
 import { validateEmail, validatePassword } from "../../utils/helper";
 import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPaths";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/useAuth";
 import { useNavigate } from "react-router-dom";
 
 const Login = () => {
+
+    const MotionDiv = motion.div;
 
     const { login } = useAuth();
 
@@ -81,7 +83,7 @@ const Login = () => {
                 // rememberMe: formData.rememberMe,
             });
 
-            const { token, role, user } = response.data;
+            const { token, role } = response.data;
 
             if (token) {
                 login(response.data, token);
@@ -133,7 +135,7 @@ const Login = () => {
     if (formState.success) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-                <motion.div
+                <MotionDiv
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     className="bg-white p-8 rounded-xl shadow-lg max-w-md w-full text-center"
@@ -143,14 +145,14 @@ const Login = () => {
                     <p className="text-gray-600 mb-4">You have been successfully logged in.</p>
                     <div className="animate-spin w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full mx-auto" />
                     <p className="text-sm text-gray-500 mt-2">Redirecting to your dashboard.</p>
-                </motion.div>
+                </MotionDiv>
             </div>
         )
     }
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-            <motion.div
+            <MotionDiv
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
@@ -253,7 +255,7 @@ const Login = () => {
                     </div>
 
                 </form>
-            </motion.div>
+            </MotionDiv>
         </div>
     )
 }

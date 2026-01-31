@@ -1,5 +1,5 @@
 import DashboardLayout from "../../components/layout/DashboardLayout"
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import {
     Users,
     Calendar,
@@ -28,7 +28,7 @@ const ApplicationViewer = () => {
     const [loading, setLoading] = useState(true)
     const [selectedApplicant, setSelectedApplicant] = useState(null);
 
-    const fetchApplications = async () => {
+    const fetchApplications = useCallback(async () => {
         try {
             setLoading(true)
             const response = await axiosInstance.get(
@@ -36,16 +36,16 @@ const ApplicationViewer = () => {
             );
             setApplications(response?.data)
         } catch (error) {
-            console.log("Failed to fetch applications")
+            console.log("Failed to fetch applications", error)
         } finally {
             setLoading(false);
         }
-    }
+    }, [jobId])
 
     useEffect(() => {
         if (jobId) fetchApplications();
         else navigate('/manage-jobs')
-    }, [])
+    }, [jobId, fetchApplications, navigate])
 
     // Group applications by job
     const groupedApplications = useMemo(() => {

@@ -1,5 +1,5 @@
 import DashboardLayout from "../../components/layout/DashboardLayout"
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
     AlertCircle,
     MapPin,
@@ -17,7 +17,6 @@ import { CATEGORIES, JOB_TYPES } from "../../utils/data"
 import InputField from "../../components/Input/InputField"
 import SelectField from "../../components/Input/SelectField"
 import TextareaField from "../../components/Input/TextareaField"
-import { div } from "framer-motion/client"
 import JobPostingPreview from "../../components/Cards/JobPostingPreview"
 
 const JobPostingForm = () => {
@@ -152,41 +151,37 @@ const JobPostingForm = () => {
         return Object.keys(validationErrors).length === 0;
     }
 
-    useEffect(() => {
-        const fetchJobDetails = async () => {
-            if (jobId) {
-                try {
-                    const response = await axiosInstance.get(
-                        API_PATHS.JOBS.GET_JOB_BY_ID(jobId)
-                    );
-                    const jobData = response.data;
-                    if (jobData) {
-                        setFormData({
-                            jobTitle: jobData.title,
-                            location: jobData.location,
-                            category: jobData.category,
-                            jobType: jobData.type,
-                            description: jobData.description,
-                            requirements: jobData.requirements,
-                            salaryMin: jobData.salaryMin,
-                            salaryMax: jobData.salaryMax,
-                        })
-                    }
-                } catch (error) {
-                    console.error("Error fetching job details")
-                    if (error.response) {
-                        console.error("API Error:", error.response.data.message)
-                    }
+    const fetchJobDetails = useCallback(async () => {
+        if (jobId) {
+            try {
+                const response = await axiosInstance.get(
+                    API_PATHS.JOBS.GET_JOB_BY_ID(jobId)
+                );
+                const jobData = response.data;
+                if (jobData) {
+                    setFormData({
+                        jobTitle: jobData.title,
+                        location: jobData.location,
+                        category: jobData.category,
+                        jobType: jobData.type,
+                        description: jobData.description,
+                        requirements: jobData.requirements,
+                        salaryMin: jobData.salaryMin,
+                        salaryMax: jobData.salaryMax,
+                    })
+                }
+            } catch (error) {
+                console.error("Error fetching job details")
+                if (error.response) {
+                    console.error("API Error:", error.response.data.message)
                 }
             }
-        };
-
-        fetchJobDetails();
-
-        return () => {
-
         }
-    }, [])
+    }, [jobId]);
+
+    useEffect(() => {
+        fetchJobDetails();
+    }, [fetchJobDetails])
 
     if (isPreview) {
         return (

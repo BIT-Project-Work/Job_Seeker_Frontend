@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react"
 import { Save, X, Trash2 } from 'lucide-react'
-import { useAuth } from "../../context/AuthContext"
+import { useAuth } from "../../context/useAuth"
 import axiosInstance from "../../utils/axiosInstance"
 import { API_PATHS } from "../../utils/apiPaths"
 import toast from "react-hot-toast"
 import uploadImage from "../../utils/uploadImage"
 import Navbar from "../../components/layout/Navbar"
 import { Link } from "react-router-dom"
-import { div } from "framer-motion/client"
 
 const UserProfile = () => {
 

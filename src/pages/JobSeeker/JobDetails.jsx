@@ -6,11 +6,11 @@ import {
     Users,
     Building
 } from 'lucide-react'
-import { useAuth } from '../../context/AuthContext'
+import { useAuth } from '../../context/useAuth'
 import { useParams } from 'react-router-dom'
 import axiosInstance from '../../utils/axiosInstance'
 import { API_PATHS } from '../../utils/apiPaths'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Navbar from '../../components/layout/Navbar'
 import moment from 'moment'
 import StatusBadge from '../../components/StatusBadge'
@@ -23,7 +23,7 @@ const JobDetails = () => {
 
     const [jobDetails, setJobDetails] = useState(null);
 
-    const getJobDetailsById = async () => {
+    const getJobDetailsById = useCallback(async () => {
         try {
             const response = await axiosInstance.get(
                 API_PATHS.JOBS.GET_JOB_By_ID(jobId), {
@@ -33,7 +33,7 @@ const JobDetails = () => {
         } catch (error) {
             console.error("Error fetching job details:", error)
         }
-    }
+    }, [jobId, user])
 
     const applyToJob = async () => {
         try {
@@ -54,7 +54,7 @@ const JobDetails = () => {
         if (jobId && user) {
             getJobDetailsById();
         }
-    }, [jobId, user])
+    }, [jobId, user, getJobDetailsById])
 
     return (
         <div className="bg-linear-to-br from-blue-50 via-white to-purple-50">

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { Building2, Mail, Edit3 } from "lucide-react"
-import { useAuth } from "../../context/AuthContext"
+import { useAuth } from "../../context/useAuth"
 import axiosInstance from "../../utils/axiosInstance"
 import { API_PATHS } from "../../utils/apiPaths"
 import toast from "react-hot-toast"

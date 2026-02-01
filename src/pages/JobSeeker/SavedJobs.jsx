@@ -4,7 +4,7 @@ import {
     Grid,
     List
 } from 'lucide-react'
-import { useAuth } from '../../context/AuthContext'
+import { useAuth } from '../../context/useAuth'
 import { useNavigate } from 'react-router-dom'
 import axiosInstance from '../../utils/axiosInstance'
 import { API_PATHS } from '../../utils/apiPaths'
@@ -38,6 +38,7 @@ const SavedJobs = () => {
             getSavedJobs();
         } catch (error) {
             toast.error("Something went wrong! Try again later")
+            console.log(error)
         }
     }
 

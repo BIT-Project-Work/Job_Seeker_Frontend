@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Search, Filter, Grid, List, X } from 'lucide-react'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import axiosInstance from '../../utils/axiosInstance'
 import { API_PATHS } from '../../utils/apiPaths'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { useAuth } from '../../context/AuthContext'
+import { useAuth } from '../../context/useAuth'
 import FilterContent from './components/FilterContent'
 import SearchHeader from './components/SearchHeader'
 import Navbar from '../../components/layout/Navbar'
@@ -19,7 +19,7 @@ const JobSeekerDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [viewMode, setViewMode] = useState("grid")
     const [showMobileFilters, setShowMobileFilters] = useState(false)
-    const [error, setError] = useState(null);
+    const [, setError] = useState(null);
 
     const navigate = useNavigate();
 
@@ -41,7 +41,7 @@ const JobSeekerDashboard = () => {
     });
 
     // Function to fetch jobs from API
-    const fetchJobs = async (filterParams = {}) => {
+    const fetchJobs = useCallback(async (filterParams = {}) => {
         try {
             setLoading(true);
             setError(null);
@@ -78,7 +78,7 @@ const JobSeekerDashboard = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [user]);
 
     // Fetch jobs when filters change (debounced)
     useEffect(() => {
@@ -112,7 +112,7 @@ const JobSeekerDashboard = () => {
 
         return () => clearTimeout(timeoutId);
 
-    }, [filters, user])
+    }, [filters, fetchJobs])
 
     const handleFilterChange = (key, value) => {
         setFilters((prev) => ({ ...prev, [key]: value }))

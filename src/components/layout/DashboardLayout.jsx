@@ -7,9 +7,8 @@ import {
     X
 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from "../../context/AuthContext"
+import { useAuth } from "../../context/useAuth"
 import { NAVIGATION_MENU } from "../../utils/data"
-import { div } from "framer-motion/client"
 import ProfileDropdown from "./ProfileDropdown"
 
 const NavigationItem = ({ item, isActive, onClick, isCollapsed }) => {

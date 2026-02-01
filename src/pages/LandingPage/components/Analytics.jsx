@@ -3,6 +3,8 @@ import { TrendingUp, Users, Briefcase, Target } from "lucide-react"
 
 const Analytics = () => {
 
+    const MotionDiv = motion.div
+
     const stats = [
         {
             icon: Users,
@@ -37,7 +39,7 @@ const Analytics = () => {
     return (
         <section className="py-20 bg-white relative overflow-hidden">
             <div className="container mx-auto px-4">
-                <motion.div
+                <MotionDiv
                     initial={{ opacity: 0, y: 30 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8 }}
@@ -53,12 +55,12 @@ const Analytics = () => {
                     <p className="text-xl text-gray-600 max-w-3xl mx-auto">
                         Real-time insights and data-driven results that showcase the power of our platform in connecting talent with opportunities.
                     </p>
-                </motion.div>
+                </MotionDiv>
 
                 {/* Stats Card */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
                     {stats.map((stat, index) => (
-                        <motion.div
+                        <MotionDiv
                             key={index}
                             initial={{ opacity: 0, y: 30 }}
                             whileInView={{ opacity: 1, y: 0 }}
@@ -76,7 +78,7 @@ const Analytics = () => {
                             </div>
                             <h3 className="text-3xl font-bold text-gray-900 mb-2">{stat.value}</h3>
                             <p className="text-gray-600">{stat.title}</p>
-                        </motion.div>
+                        </MotionDiv>
                     ))}
                 </div>
             </div>

@@ -14,16 +14,19 @@ import {
 } from 'lucide-react'
 import { useState } from 'react';
 import { validateAvatar, validateEmail, validatePassword } from '../../utils/helper';
-import { useAuth } from '../../context/useAuth';
-import axiosInstance from '../../utils/axiosInstance';
-import uploadImage from '../../utils/uploadImage';
-import { API_PATHS } from '../../utils/apiPaths';
+import { useUploadImage } from '../../utils/imageUpload'
+import { useRegisterMutation } from '../../store/slices/authApiSlice';
+import { Link, useNavigate } from 'react-router-dom';
 
 const SignUp = () => {
 
+    const navigate = useNavigate();
+
     const MotionDiv = motion.div;
 
-    const { login } = useAuth();
+    const [register, { isLoading }] = useRegisterMutation();
+
+    const { uploadImage } = useUploadImage();
 
     const [formData, setFormData] = useState({
         fullName: '',
@@ -129,13 +132,24 @@ const SignUp = () => {
                 avatarUrl = imgUploadRes.imageUrl || "";
             }
 
-            const response = await axiosInstance.post(API_PATHS.AUTH.REGISTER, {
+            // const response = await axiosInstance.post(API_PATHS.AUTH.REGISTER, {
+            //     name: formData.fullName,
+            //     email: formData.email,
+            //     password: formData.password,
+            //     role: formData.role,
+            //     avatar: avatarUrl || "",
+            // })
+
+            //! RTK Query
+            const response = await register({
                 name: formData.fullName,
                 email: formData.email,
                 password: formData.password,
                 role: formData.role,
                 avatar: avatarUrl || "",
             })
+
+            console.log(response);
 
             // Handle successful registration
             setFormState((prev) => ({
@@ -145,19 +159,20 @@ const SignUp = () => {
                 errors: {}
             }));
 
-            const { token } = response.data;
+            // const { token } = response.data;
 
-            if (token) {
-                login(response.data, token)
+            // if (token) {
+            //     login(response.data, token)
 
-                // Redirect based on role
-                setTimeout(() => {
-                    window.location.href =
-                        formData.role === 'EMPLOYER'
-                            ? '/employer-dashboard'
-                            : '/find-jobs'
-                }, 2000)
-            }
+            //     // Redirect based on role
+            //     setTimeout(() => {
+            //         // window.location.href =
+            //         navigate =
+            //             formData.role === 'EMPLOYER'
+            //                 ? '/employer-dashboard'
+            //                 : '/find-jobs'
+            //     }, 2000)
+            // }
 
         } catch (error) {
             console.log("error", error)
@@ -404,12 +419,12 @@ const SignUp = () => {
                     <div className="text-center">
                         <p className="text-gray-600">
                             Already have an account?{" "}
-                            <a
-                                href="/login"
+                            <Link
+                                to="/login"
                                 className="text-blue-600 hover:text-blue-700 font-medium"
                             >
                                 Sign in here
-                            </a>
+                            </Link>
                         </p>
                     </div>
                 </form>

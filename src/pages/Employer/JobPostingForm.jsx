@@ -1,5 +1,5 @@
 import DashboardLayout from "../../components/layout/DashboardLayout"
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import {
     AlertCircle,
     MapPin,
@@ -9,21 +9,20 @@ import {
     Eye,
     Send
 } from 'lucide-react'
-import { API_PATHS } from "../../utils/apiPaths"
 import { useLocation, useNavigate } from "react-router-dom"
-import axiosInstance from "../../utils/axiosInstance"
 import toast from "react-hot-toast"
 import { CATEGORIES, JOB_TYPES } from "../../utils/data"
 import InputField from "../../components/Input/InputField"
 import SelectField from "../../components/Input/SelectField"
 import TextareaField from "../../components/Input/TextareaField"
 import JobPostingPreview from "../../components/Cards/JobPostingPreview"
+import { useCreateJobMutation, useGetJobByIdQuery, useUpdateJobMutation } from "../../store/slices/jobSlice"
 
 const JobPostingForm = () => {
 
     const navigate = useNavigate()
     const location = useLocation();
-    const jobId = location.state?.jobId || null;
+    const jobId = location?.state?.jobId || null;
 
     const [formData, setFormData] = useState({
         jobTitle: "",
@@ -37,8 +36,34 @@ const JobPostingForm = () => {
     });
 
     const [errors, setErrors] = useState({})
-    const [isSubmitting, setIsSubmitting] = useState(false)
+    // const [isSubmitting, setIsSubmitting] = useState(false)
     const [isPreview, setIsPreview] = useState(false)
+
+    const { data, isLoading } = useGetJobByIdQuery(jobId, {
+        skip: !jobId
+    })
+
+    const [createJob, { isLoading: isCreating }] = useCreateJobMutation()
+    const [updateJob, { isLoading: isUpdating }] = useUpdateJobMutation()
+
+    const isSubmitting = isCreating || isUpdating
+
+
+    useEffect(() => {
+        if (data) {
+            const job = data
+            setFormData({
+                jobTitle: job.title,
+                location: job.location,
+                category: job.category,
+                jobType: job.type,
+                description: job.description,
+                requirements: job.requirements,
+                salaryMin: job.salaryMin,
+                salaryMax: job.salaryMax
+            })
+        }
+    }, [data])
 
     const handleInputChange = (field, value) => {
         setFormData((prev) => ({
@@ -64,8 +89,6 @@ const JobPostingForm = () => {
             return;
         }
 
-        setIsSubmitting(true);
-
         const jobPayload = {
             title: formData.jobTitle,
             description: formData.description,
@@ -78,39 +101,16 @@ const JobPostingForm = () => {
         };
 
         try {
-            const response = jobId ? await axiosInstance.patch(API_PATHS.JOBS.UPDATE_JOB(jobId), jobPayload)
-                : await axiosInstance.post(API_PATHS.JOBS.POST_JOB, jobPayload)
+            const response = jobId ? await updateJob(jobId, jobPayload).unwrap()
+                : await createJob(jobPayload).unwrap();
 
-            if (response.status === 200 || response.status === 201) {
-                toast.success(
-                    jobId ? "Job Updated Successfully!" : "Job Posted Successfully!"
-                );
-                setFormData({
-                    jobTitle: "",
-                    location: "",
-                    category: "",
-                    jobType: "",
-                    description: "",
-                    requirements: "",
-                    salaryMin: "",
-                    salaryMax: "",
-                });
-                navigate("/employer-dashboard")
-                return;
-            }
+            toast.success(jobId ? "Job Updated Successfully!" : "Job Posted Successfully!")
+            navigate("/employer-dashboard")
 
-            console.error("Unexpected response:", response);
-            toast.error("Something went wrong. Please try again.")
         } catch (error) {
-            if (error.response?.data?.message) {
-                console.error("API Error:", error.response.data.message)
-                toast.error(error.response.data.message)
-            } else {
-                console.error("Unexpected error:", error);
-                toast.error("Failed to post/update job. Please try again.")
+            {
+                toast.error(error?.data?.message || "Something went wrong")
             }
-        } finally {
-            setIsSubmitting(false);
         }
     };
 
@@ -150,38 +150,6 @@ const JobPostingForm = () => {
         const validationErrors = validateForm(formData);
         return Object.keys(validationErrors).length === 0;
     }
-
-    const fetchJobDetails = useCallback(async () => {
-        if (jobId) {
-            try {
-                const response = await axiosInstance.get(
-                    API_PATHS.JOBS.GET_JOB_BY_ID(jobId)
-                );
-                const jobData = response.data;
-                if (jobData) {
-                    setFormData({
-                        jobTitle: jobData.title,
-                        location: jobData.location,
-                        category: jobData.category,
-                        jobType: jobData.type,
-                        description: jobData.description,
-                        requirements: jobData.requirements,
-                        salaryMin: jobData.salaryMin,
-                        salaryMax: jobData.salaryMax,
-                    })
-                }
-            } catch (error) {
-                console.error("Error fetching job details")
-                if (error.response) {
-                    console.error("API Error:", error.response.data.message)
-                }
-            }
-        }
-    }, [jobId]);
-
-    useEffect(() => {
-        fetchJobDetails();
-    }, [fetchJobDetails])
 
     if (isPreview) {
         return (

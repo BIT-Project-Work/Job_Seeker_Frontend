@@ -33,6 +33,6 @@ export const API_PATHS = {
     },
 
     IMAGE: {
-        UPLOAD_IMAGE: '/auth/upload-image',     // Upload profile picture
+        UPLOAD_IMAGE: '/auth/upload_image',     // Upload profile picture
     }
 }

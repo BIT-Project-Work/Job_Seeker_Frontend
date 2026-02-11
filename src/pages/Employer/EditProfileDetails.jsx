@@ -10,6 +10,7 @@ const EditProfileDetails = ({
     saving,
     uploading
 }) => {
+
     return (
         <DashboardLayout activeMenu="company-profile">
             {formData && <div className="min-h-screen bg-gray-50 py-8 px-4">
@@ -39,7 +40,7 @@ const EditProfileDetails = ({
                                             />
                                             {uploading?.avatar && (
                                                 <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center">
-                                                    <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spain"></div>
+                                                    <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                                                 </div>
                                             )}
                                         </div>

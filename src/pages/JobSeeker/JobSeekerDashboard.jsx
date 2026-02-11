@@ -1,8 +1,6 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
 import { Search, Filter, Grid, List, X } from 'lucide-react'
 import LoadingSpinner from '../../components/LoadingSpinner'
-import axiosInstance from '../../utils/axiosInstance'
-import { API_PATHS } from '../../utils/apiPaths'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { useAuth } from '../../context/useAuth'
@@ -10,13 +8,15 @@ import FilterContent from './components/FilterContent'
 import SearchHeader from './components/SearchHeader'
 import Navbar from '../../components/layout/Navbar'
 import JobCard from '../../components/Cards/JobCard'
+import { useSaveJobMutation, useUnSaveJobMutation } from '../../store/slices/savedJobSlice'
+import { useApplyToJobMutation } from '../../store/slices/applicationSlice'
+import { useGetJobsWithFiltersQuery } from '../../store/slices/JobSlice'
 
 const JobSeekerDashboard = () => {
 
     const { user } = useAuth();
 
-    const [jobs, setJobs] = useState([])
-    const [loading, setLoading] = useState(true);
+    // const [jobs, setJobs] = useState([])
     const [viewMode, setViewMode] = useState("grid")
     const [showMobileFilters, setShowMobileFilters] = useState(false)
     const [, setError] = useState(null);
@@ -40,79 +40,30 @@ const JobSeekerDashboard = () => {
         categories: true
     });
 
-    // Function to fetch jobs from API
-    const fetchJobs = useCallback(async (filterParams = {}) => {
-        try {
-            setLoading(true);
-            setError(null);
-
-            // Build query parameters
-            const params = new URLSearchParams();
-
-            if (filterParams.keyword) params.append("keyword", filterParams.keyword)
-            if (filterParams.location)
-                params.append("location", filterParams.location)
-            if (filterParams.minSalary)
-                params.append("minSalary", filterParams.minSalary)
-            if (filterParams.maxSalary)
-                params.append("maxSalary", filterParams.maxSalary)
-            if (filterParams.type) params.append("type", filterParams.type)
-            if (filterParams.category)
-                params.append("category", filterParams.category)
-            if (user) params.append("userId", user?._id)
-
-            const response = await axiosInstance.get(
-                `${API_PATHS.JOBS.GET_ALL_JOBS}?${params.toString()}`
-            );
-
-            const jobsData = Array.isArray(response.data)
-                ? response.data
-                : response?.data?.jobs || [];
-
-            setJobs(jobsData)
-
-        } catch (error) {
-            console.error("Error fetching jobs:", error)
-            setError("Failed to fetch jobs. Please try again later.")
-            setJobs([])
-        } finally {
-            setLoading(false);
-        }
-    }, [user]);
-
-    // Fetch jobs when filters change (debounced)
-    useEffect(() => {
-        const timeoutId = setTimeout(() => {
-            const apiFilters = {
+    const { data, isLoading } =
+        useGetJobsWithFiltersQuery(
+            {
                 keyword: filters.keyword,
                 location: filters.location,
                 minSalary: filters.minSalary,
                 maxSalary: filters.maxSalary,
                 category: filters.category,
                 type: filters.type,
-                experience: filters.experience,
-                remoteOnly: filters.remoteOnly,
-            };
+                ...(user?._id && { userId: user._id }),
+            },
+            // {
+            //     skip: !user, // optional
+            // }
+        );
 
-            // Only call API if there are meaningful filters
-            const hasFilters = Object.values(apiFilters).some(
-                (value) =>
-                    value !== "" &&
-                    value !== false &&
-                    value !== null &&
-                    value !== undefined
-            );
+    const jobs = Array.isArray(data)
+        ? data
+        : data?.jobs || [];
 
-            if (hasFilters) {
-                fetchJobs(apiFilters);
-            } else {
-                fetchJobs();    // Fetch all jobs if not filters
-            }
-        }, 500); // 500 ms debounce
 
-        return () => clearTimeout(timeoutId);
-
-    }, [filters, fetchJobs])
+    const [unsaveJob] = useUnSaveJobMutation();
+    const [saveJob] = useSaveJobMutation();
+    const [applyJob] = useApplyToJobMutation();
 
     const handleFilterChange = (key, value) => {
         setFilters((prev) => ({ ...prev, [key]: value }))
@@ -165,37 +116,32 @@ const JobSeekerDashboard = () => {
     const toggleSaveJobs = async (jobId, isSaved) => {
         try {
             if (isSaved) {
-                await axiosInstance.delete(API_PATHS.JOBS.UNSAVE_JOB(jobId));
-                toast.success("Job removed successfully!")
+                await unsaveJob(jobId).unwrap();
+                toast.success("Job removed successfully!");
             } else {
-                await axiosInstance.post(API_PATHS.JOBS.SAVE_JOB(jobId))
-                toast.success("Job saved successfully!")
+                await saveJob(jobId).unwrap();
+                toast.success("Job saved successfully!");
             }
-
-            fetchJobs();
-        } catch (error) {
-            console.log("Error:", error)
-            toast.error("Something went wrong! Try again later")
+        } catch (err) {
+            toast.error(
+                err?.data?.message || "Something went wrong!"
+            );
         }
     };
 
     const applyToJob = async (jobId) => {
         try {
-            if (jobId) {
-                await axiosInstance.post(API_PATHS.APPLICATIONS.APPLY_TO_JOB(jobId));
-                toast.success("Applied to job successfully!")
-            }
-
-            fetchJobs();
-        } catch (error) {
-            console.log("Error:", error)
-            const errorMsg = error?.response?.data?.message
-            toast.error(errorMsg || "Something went wrong! Try again later")
+            await applyJob(jobId).unwrap();
+            toast.success("Applied to job successfully!");
+        } catch (err) {
+            toast.error(
+                err?.data?.message || "Something went wrong!"
+            );
         }
-    }
+    };
 
-    if (jobs.length == 0 && loading) {
-        return <LoadingSpinner />
+    if (isLoading && jobs.length === 0) {
+        return <LoadingSpinner />;
     }
 
     return (

@@ -1,17 +1,18 @@
 import { useState, useEffect } from "react"
 import { Building2, Mail, Edit3 } from "lucide-react"
 import { useAuth } from "../../context/useAuth"
-import axiosInstance from "../../utils/axiosInstance"
-import { API_PATHS } from "../../utils/apiPaths"
 import toast from "react-hot-toast"
-import uploadImage from "../../utils/uploadImage"
 
 import DashboardLayout from "../../components/layout/DashboardLayout"
 import EditProfileDetails from "./EditProfileDetails"
+import { useUpdateProfileMutation } from "../../store/slices/userSlice"
+import { useUploadImage } from "../../utils/imageUpload"
 
 const EmployeeProfilePage = () => {
 
-    const { user, updateUser } = useAuth();
+    const { user } = useAuth();
+
+    const { uploadImage } = useUploadImage();
 
     const [profileData, setProfileData] = useState({
         name: user?.name || "",
@@ -36,7 +37,7 @@ const EmployeeProfilePage = () => {
     }, [user]);
 
     const [editMode, setEditMode] = useState(false);
-    const [formData, setFormData] = useState({ ...profileData })
+    const [formData, setFormData] = useState(profileData);
     const [uploading, setUploading] = useState({ avatar: false, logo: false })
     const [saving, setSaving] = useState(false);
 
@@ -56,9 +57,7 @@ const EmployeeProfilePage = () => {
 
             // Update form data with new image url
             const field = type === "avatar" ? "avatar" : "companyLogo"
-            handleInputChange(field, avatarUrl
-
-            )
+            handleInputChange(field, avatarUrl)
         } catch (error) {
             console.error("Image upload failed:", error);
         } finally {
@@ -79,24 +78,19 @@ const EmployeeProfilePage = () => {
         }
     };
 
+    const [updateProfile] = useUpdateProfileMutation();
+
     const handleSave = async () => {
         setSaving(true);
 
         try {
-            const response = await axiosInstance.patch(
-                API_PATHS.AUTH.UPDATE_PROFILE,
-                formData
-            );
+            await updateProfile(formData).unwrap();
 
-            if (response.status === 200) {
-                toast.success("Profile Details updated successfully!")
-                // Update profile data and exit edit mode
-                setProfileData({ ...formData })
-                updateUser({ ...formData })
-                setEditMode(false);
-            }
+            toast.success("Profile Details updated successfully!");
+            setProfileData({ ...formData });
+            setEditMode(false);
         } catch (error) {
-            console.error("Profile update failed: ", error)
+            toast.error(error?.data?.message || "Update failed");
         } finally {
             setSaving(false);
         }
@@ -106,6 +100,11 @@ const EmployeeProfilePage = () => {
         setFormData({ ...profileData })
         setEditMode(false);
     }
+
+    useEffect(() => {
+        setFormData(profileData);
+    }, [profileData]);
+
 
     if (editMode) {
         return (
@@ -133,7 +132,11 @@ const EmployeeProfilePage = () => {
                             </h1>
                             <button
                                 className="bg-white/10 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2"
-                                onClick={() => setEditMode(true)}
+                                // onClick={() => setEditMode(true)}
+                                onClick={() => {
+                                    setFormData(profileData);
+                                    setEditMode(true);
+                                }}
                             >
                                 <Edit3 className="h-4 w-4" />
                                 <span className="">Edit Profile</span>

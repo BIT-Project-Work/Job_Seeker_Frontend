@@ -1,12 +1,34 @@
-import { useContext } from "react";
-import { AuthContext } from './AuthContext';
+import { useSelector, useDispatch } from "react-redux";
+import { clearCredentials } from "../store/slices/authSlice";
+import { useLogoutMutation } from "../store/slices/authApiSlice";
 
 export const useAuth = () => {
-    const context = useContext(AuthContext);
+    const dispatch = useDispatch();
+    const [logoutApi] = useLogoutMutation();
 
-    if (!context) {
-        throw new Error("useAuth must be used within an AuthProvider");
-    }
+    const { user, isAuthenticated, initialized } = useSelector(
+        (state) => state.auth
+    );
 
-    return context;
+    const updateUser = (updatedUserData) => {
+        dispatch(updateUserAction(updatedUserData));
+    };
+
+    const logout = async () => {
+        try {
+            await logoutApi().unwrap();
+        } catch (err) {
+            console.error("Logout failed:", err);
+        } finally {
+            dispatch(clearCredentials());
+            window.location.href = "/";
+        }
+    };
+
+    return {
+        user,
+        logout,
+        isAuthenticated
+    };
+
 };

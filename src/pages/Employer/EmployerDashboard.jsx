@@ -9,12 +9,11 @@ import {
 } from 'lucide-react'
 import moment from "moment"
 import { useNavigate } from "react-router-dom"
-import axiosInstance from "../../utils/axiosInstance"
-import { API_PATHS } from "../../utils/apiPaths"
 import DashboardLayout from "../../components/layout/DashboardLayout"
 import LoadingSpinner from "../../components/LoadingSpinner"
 import JobDashboardCard from "../../components/Cards/JobDashboardCard"
 import ApplicantDashboardCard from "../../components/Cards/ApplicantDashboardCard"
+import { useGetAnalyticsQuery } from "../../store/slices/analyticsSlice"
 
 const Card = ({ title, subtitle, headerAction, className, children }) => {
     return (
@@ -79,27 +78,27 @@ const EmployerDashboard = () => {
 
     const navigate = useNavigate();
 
-    const [dashboardData, setDashboardData] = useState(null);
-    const [isLoading, setIsLoading] = useState(false);
+    const {
+        data: dashboardData,
+        isLoading,
+        isError,
+    } = useGetAnalyticsQuery()
 
-    const getDashboardOverview = async () => {
-        try {
-            setIsLoading(true);
-            const response = await axiosInstance.get(API_PATHS.DASHBOARD.OVERVIEW)
-            if (response.status === 200) {
-                setDashboardData(response.data)
-            }
-        } catch (error) {
-            console.log("error",error)
-        } finally {
-            setIsLoading(false)
-        }
+    if (isLoading) {
+        return (
+            <DashboardLayout activeMenu="employer-dashboard">
+                <LoadingSpinner />
+            </DashboardLayout>
+        )
     }
 
-    useEffect(() => {
-        getDashboardOverview();
-        return () => { };
-    }, [])
+    if (isError) {
+        return (
+            <DashboardLayout activeMenu="employer-dashboard">
+                <p className="text-red-500">Failed to load dashboard data.</p>
+            </DashboardLayout>
+        )
+    }
 
     return (
         <DashboardLayout activeMenu="employer-dashboard">

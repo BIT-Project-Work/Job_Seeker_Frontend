@@ -4,7 +4,7 @@ export const jobSlice = apiSlice.injectEndpoints({
     endpoints: (builder) => ({
 
         // 👥 Get all jobs
-        getJobs: builder.query({
+        getAllJobs: builder.query({
             query: () => "/jobs",
             providesTags: (result = []) => [
                 "Job",
@@ -14,20 +14,31 @@ export const jobSlice = apiSlice.injectEndpoints({
 
         // 👥 Get all jobs
         getJobsWithFilters: builder.query({
-            query: () => "/jobs",
-            providesTags: (result = []) => [
-                "Job",
-                ...result.map(({ id }) => ({ type: "Job", id })),
-            ],
+            query: (filters) => ({
+                url: "/jobs",
+                params: filters,
+            }),
+            providesTags: ["Job"],
         }),
 
         // 👤 Get job by ID
+        // getJobById: builder.query(
+        //     {
+        //         query: (id) => `/jobs/${id}`,
+        //         providesTags: ["Job"]
+        //     }),
+
         getJobById: builder.query({
-            query: (id) => `/job/${id}`,
-            providesTags: (result = []) => [
-                "Job",
-                ...result.map(({ id }) => ({ type: "Job", id })),
-            ],
+            query: ({ jobId, userId }) => ({
+                url: `/jobs/${jobId}`,
+                params: { userId }, // will generate ?userId=xyz
+            }),
+            providesTags: ["Job"],
+        }),
+
+        getJobsEmployer: builder.query({
+            query: () => "/jobs/get-jobs-employer",
+            providesTags: ["Job"]
         }),
 
         createJob: builder.mutation({
@@ -49,6 +60,15 @@ export const jobSlice = apiSlice.injectEndpoints({
             invalidatesTags: ["Job", "Analytics"],
         }),
 
+        // ✏️ Update job
+        closeJob: builder.mutation({
+            query: (id) => ({
+                url: `/jobs/${id}/toggle-close`,
+                method: "PATCH",
+            }),
+            invalidatesTags: ["Job", "Analytics"],
+        }),
+
         // 🗑 Delete Job
         deleteJob: builder.mutation({
             query: (id) => ({
@@ -63,10 +83,12 @@ export const jobSlice = apiSlice.injectEndpoints({
 })
 
 export const {
-    useGetJobsQuery,
+    useGetAllJobsQuery,
     useGetJobsWithFiltersQuery,
     useGetJobByIdQuery,
+    useGetJobsEmployerQuery,
     useCreateJobMutation,
     useDeleteJobMutation,
     useUpdateJobMutation,
+    useCloseJobMutation
 } = jobSlice;

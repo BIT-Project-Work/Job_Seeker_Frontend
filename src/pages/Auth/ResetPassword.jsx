@@ -1,9 +1,21 @@
-import { AlertCircle, Eye, EyeOff, Lock } from "lucide-react";
+import { AlertCircle, Eye, EyeOff, Loader, Lock } from "lucide-react";
 import { useState } from "react";
-import { Link } from "react-router-dom";
-
+import { Link, useNavigate } from "react-router-dom";
+import { useResetPasswordMutation } from "../../store/slices/authApiSlice";
+import { validatePassword } from "../../utils/helper";
+import toast from 'react-hot-toast'
 
 const ResetPassword = () => {
+
+    const emailRegister = localStorage.getItem("email");
+    const otpRegister = localStorage.getItem('otp')
+
+    const navigate = useNavigate();
+
+    const email = emailRegister
+    const otp = otpRegister
+
+    const [resetPassword] = useResetPasswordMutation();
 
     const [formData, setFormData] = useState({
         email: '',
@@ -37,7 +49,7 @@ const ResetPassword = () => {
 
     const validateForm = () => {
         const errors = {
-            password: validatePassword(formData.password)
+            newPassword: validatePassword(formData.newPassword)
         };
 
         // Remove empty errors
@@ -58,15 +70,17 @@ const ResetPassword = () => {
         console.log(formData)
 
         try {
-            // Login API Integration
             //! RTK Query
-            const response = await register({
-                email: formData.email,
-                password: formData.password,
-                otp: formData.otp,
-            })
+            const data = await resetPassword({
+                email: email,
+                newPassword: formData.newPassword,
+                otp: otp,
+            }).unwrap();
 
-            console.log(response);
+            toast.success(data.message || "Email verified");
+            localStorage.removeItem("email");
+            localStorage.removeItem("otp");
+            navigate("/login");
 
             // Handle successful registration
             setFormState((prev) => ({
@@ -76,13 +90,16 @@ const ResetPassword = () => {
                 errors: {}
             }));
 
-        } catch (error) {
+        } catch (err) {
+            const message =
+                err?.data?.message ||
+                err?.error ||
+                "Login failed. Please check your credentials";
+
             setFormState(prev => ({
                 ...prev,
                 loading: false,
-                errors: {
-                    submit: error.response?.data?.message || "Login failed. Please check your credentials"
-                }
+                errors: { submit: message },
             }))
         }
     }

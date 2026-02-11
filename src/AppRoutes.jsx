@@ -18,6 +18,7 @@ import VerifyEmail from "./pages/Auth/VerifyEmail";
 import ForgotPassword from "./pages/Auth/ForgotPassword";
 import VerifyOtp from "./pages/Auth/VerifyOtp";
 import ResetPassword from "./pages/Auth/ResetPassword";
+import ProtectedRedux from "./routes/ProtectedRedux";
 
 const AppRoutes = () => {
     const loadingBarRef = useRef(null);
@@ -51,7 +52,7 @@ const AppRoutes = () => {
                 <Route path="/profile" element={<UserProfile />} />
 
                 {/* Protected Routes */}
-                <Route element={<ProtectedRoute requiredRole="EMPLOYER" />}>
+                <Route element={<ProtectedRedux requiredRole="EMPLOYER" />}>
                     <Route path="/employer-dashboard" element={<EmployerDashboard />} />
                     <Route path="/post-job" element={<JobPostingForm />} />
                     <Route path="/manage-jobs" element={<ManageJobs />} />

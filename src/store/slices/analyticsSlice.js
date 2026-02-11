@@ -6,10 +6,11 @@ export const analyticsSlice = apiSlice.injectEndpoints({
         // 👥 Get all jobs
         getAnalytics: builder.query({
             query: () => "/analytics/overview",
-            providesTags: (result = []) => [
-                "Analytics",
-                ...result.map(({ id }) => ({ type: "Analytics", id })),
-            ],
+            // providesTags: (result = []) => [
+            //     "Analytics",
+            //     ...result?.map(({ id }) => ({ type: "Analytics", id })),
+            // ],
+            providesTags: ['Analytics']
         }),
     })
 })

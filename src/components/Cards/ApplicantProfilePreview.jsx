@@ -1,11 +1,10 @@
 import { Download, X } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { getInitials } from "../../utils/helper"
 import moment from "moment"
-import axiosInstance from "../../utils/axiosInstance"
-import { API_PATHS } from "../../utils/apiPaths"
 import toast from 'react-hot-toast'
 import StatusBadge from "../StatusBadge"
+import { useUpdateApplicationStatusMutation } from "../../store/slices/applicationSlice"
 
 const statusOptions = ['Applied', 'In Review', 'Rejected', 'Accepted']
 
@@ -16,33 +15,40 @@ const ApplicantProfilePreview = ({
     handleClose
 }) => {
 
-    const [currentStatus, setCurrentStatus] = useState(selectedApplicant.status)
-    const [loading, setLoading] = useState(false);
+    // const [currentStatus, setCurrentStatus] = useState(selectedApplicant.status)
+    const [currentStatus, setCurrentStatus] = useState("");
+    const [updateStatus, { isLoading }] = useUpdateApplicationStatusMutation();
+
+
+    useEffect(() => {
+        if (selectedApplicant?.status) {
+            setCurrentStatus(selectedApplicant.status);
+        }
+    }, [selectedApplicant]);
 
     const onChangeStatus = async (e) => {
         const newStatus = e.target.value;
-        setCurrentStatus(newStatus);
-        setLoading(true);
+
+        if (!selectedApplicant?._id) return;
 
         try {
-            const response = await axiosInstance.patch(
-                API_PATHS.APPLICATIONS.UPDATE_STATUS(selectedApplicant._id),
-                { status: newStatus }
-            );
+            await updateStatus({
+                id: selectedApplicant._id,
+                status: newStatus,
+            }).unwrap();
 
-            if (response.status === 200) {
-                // Update local state after successful update
-                setSelectedApplicant({ ...selectedApplicant, status: newStatus })
-                toast.success("Application status updated successfully")
-            }
+            setSelectedApplicant({
+                ...selectedApplicant,
+                status: newStatus,
+            });
+
+            setCurrentStatus(newStatus);
+            toast.success("Application status updated successfully");
         } catch (error) {
-            console.error("Error updating status:", error)
-            // Optionally revert status if failed
-            setCurrentStatus(selectedApplicant.status);
-        } finally {
-            setLoading(false);
+            console.error("Error updating status:", error);
+            toast.error("Failed to update status");
         }
-    }
+    };
 
     return (
         <div className="fixed inset-0 bg-[rgba(0,0,0,0.2)] bg-opacity-50 flex items-center justify-center p-4 z-5">
@@ -130,7 +136,7 @@ const ApplicantProfilePreview = ({
                             <select
                                 value={currentStatus}
                                 onChange={onChangeStatus}
-                                disabled={loading}
+                                disabled={isLoading}
                                 className="w-full border border-gray-300 rounded-lg p-2 focus:ring-blue-500 focus:border-blue-500"
                             >
                                 {statusOptions.map((status) => (
@@ -139,7 +145,7 @@ const ApplicantProfilePreview = ({
                                     </option>
                                 ))}
                             </select>
-                            {loading && (
+                            {isLoading && (
                                 <p className="text-xs text-gray-500 mt-1">Updating status...</p>
                             )}
                         </div>

@@ -23,10 +23,10 @@ export const authApiSlice = apiSlice.injectEndpoints({
 
         // 📧 Verify email (gmail)
         verifyEmail: builder.mutation({
-            query: (token) => ({
+            query: (body) => ({
                 url: "/auth/verify_email",
                 method: "POST",
-                body: { token },
+                body, // send exactly the object you pass
             }),
         }),
 
@@ -59,10 +59,10 @@ export const authApiSlice = apiSlice.injectEndpoints({
 
         // 🔁 Forgot password
         forgotPassword: builder.mutation({
-            query: (email) => ({
+            query: (body) => ({
                 url: "/auth/forgot_password",
                 method: "POST",
-                body: { email },
+                body,
             }),
         }),
 
@@ -79,6 +79,14 @@ export const authApiSlice = apiSlice.injectEndpoints({
         me: builder.query({
             query: () => "/auth/me",
             providesTags: ["User"],
+        }),
+
+        // 👤 Current user (rehydration)
+        refresh: builder.mutation({
+            query: () => ({
+                url: "/auth/refresh",
+                method: "POST",
+            }),
         }),
 
         // 🚪 Logout
@@ -112,5 +120,6 @@ export const {
     useLogoutMutation,
     useAvatarUploadMutation,
     useResendForgotPasswordOtpMutation,
-    useResendVerificationOtpMutation
+    useResendVerificationOtpMutation,
+    useRefreshMutation
 } = authApiSlice;

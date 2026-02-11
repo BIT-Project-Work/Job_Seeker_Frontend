@@ -17,6 +17,7 @@ import { validateAvatar, validateEmail, validatePassword } from '../../utils/hel
 import { useUploadImage } from '../../utils/imageUpload'
 import { useRegisterMutation } from '../../store/slices/authApiSlice';
 import { Link, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 const SignUp = () => {
 
@@ -132,26 +133,18 @@ const SignUp = () => {
                 avatarUrl = imgUploadRes.imageUrl || "";
             }
 
-            // const response = await axiosInstance.post(API_PATHS.AUTH.REGISTER, {
-            //     name: formData.fullName,
-            //     email: formData.email,
-            //     password: formData.password,
-            //     role: formData.role,
-            //     avatar: avatarUrl || "",
-            // })
-
             //! RTK Query
-            const response = await register({
+            const data = await register({
                 name: formData.fullName,
                 email: formData.email,
                 password: formData.password,
                 role: formData.role,
                 avatar: avatarUrl || "",
-            })
+            }).unwrap();
 
-            console.log(response);
-
-            // Handle successful registration
+            localStorage.setItem('email', formData.email)
+            toast.success(data.message);
+            navigate('/verify_email')
             setFormState((prev) => ({
                 ...prev,
                 loading: false,
@@ -159,51 +152,19 @@ const SignUp = () => {
                 errors: {}
             }));
 
-            // const { token } = response.data;
+        } catch (err) {
+            console.error(err);
 
-            // if (token) {
-            //     login(response.data, token)
-
-            //     // Redirect based on role
-            //     setTimeout(() => {
-            //         // window.location.href =
-            //         navigate =
-            //             formData.role === 'EMPLOYER'
-            //                 ? '/employer-dashboard'
-            //                 : '/find-jobs'
-            //     }, 2000)
-            // }
-
-        } catch (error) {
-            console.log("error", error)
+            toast.error(err?.data?.message || "Registration failed");
 
             setFormState((prev) => ({
                 ...prev,
                 loading: false,
                 errors: {
-                    submit:
-                        error.response?.data?.message || "Registration failed. Please try again."
-                }
-            }))
+                    submit: err?.data?.message || "Registration failed. Please try again.",
+                },
+            }));
         }
-    }
-
-    if (formState.success) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-                <MotionDiv
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="bg-white p-8 rounded-xl shadow-lg max-w-md w-full text-center"
-                >
-                    <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Account Created!</h2>
-                    <p className="text-gray-600 mb-4">Welcome to JobPortal! Your account has been successfully created.</p>
-                    <div className="animate-spin w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full mx-auto" />
-                    <p className="text-sm text-gray-500 mt-2">Redirecting to your dashboard.</p>
-                </MotionDiv>
-            </div>
-        )
     }
 
     return (

@@ -1,12 +1,15 @@
 import { useState } from "react";
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { validateEmail } from "../../utils/helper";
 import { useForgotPasswordMutation } from "../../store/slices/authApiSlice";
-import { Mail } from "lucide-react";
+import { Loader, Mail } from "lucide-react";
+import toast from 'react-hot-toast'
 
 const ForgotPassword = () => {
 
-    const [forgotPassword, { isLoading }] = useForgotPasswordMutation();
+    const navigate = useNavigate();
+
+    const [forgotPassword] = useForgotPasswordMutation();
 
     const [formData, setFormData] = useState({
         email: '',
@@ -58,12 +61,10 @@ const ForgotPassword = () => {
 
         try {
             //! RTK Query
-            const response = await forgotPassword({
-                email: formData.email,
-            })
-
-            console.log(response);
-
+            const data = await forgotPassword({ email: formData.email }).unwrap();
+            toast.success(data.message || "Check your email for password reset OTP");
+            localStorage.setItem('email', formData.email)
+            navigate('/verify_otp')
             // Handle successful registration
             setFormState((prev) => ({
                 ...prev,
@@ -72,17 +73,22 @@ const ForgotPassword = () => {
                 errors: {}
             }));
 
-        } catch (error) {
-            console.log("error", error)
+        } catch (err) {
+            console.error("Forgot password error:", err);
+
+            // Handle array or string errors from backend
+            const message =
+                Array.isArray(err?.data?.message)
+                    ? err.data.message[0]
+                    : err?.data?.message || "Request failed. Please try again.";
 
             setFormState((prev) => ({
                 ...prev,
                 loading: false,
-                errors: {
-                    submit:
-                        error.response?.data?.message || "Registration failed. Please try again."
-                }
-            }))
+                errors: { submit: message },
+            }));
+
+            toast.error(message);
         }
     }
 

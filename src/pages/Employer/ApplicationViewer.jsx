@@ -1,5 +1,5 @@
 import DashboardLayout from "../../components/layout/DashboardLayout"
-import { useState, useEffect, useMemo, useCallback } from "react"
+import { useState, useEffect, useMemo } from "react"
 import {
     Users,
     Calendar,
@@ -9,60 +9,56 @@ import {
     Eye,
     ArrowLeft
 } from 'lucide-react'
-import axiosInstance from "../../utils/axiosInstance"
-import { API_PATHS } from "../../utils/apiPaths"
 import { useLocation, useNavigate } from "react-router-dom"
 import moment from 'moment'
 import { getInitials } from "../../utils/helper"
 import StatusBadge from "../../components/StatusBadge"
 import ApplicantProfilePreview from "../../components/Cards/ApplicantProfilePreview"
+import { useGetApplicationByJobIdQuery } from "../../store/slices/applicationSlice"
 
 const ApplicationViewer = () => {
 
     const location = useLocation();
-    const jobId = location.state?.jobId || null;
-
+    const jobId = location?.state?.jobId || null;
     const navigate = useNavigate();
 
-    const [applications, setApplications] = useState([])
-    const [loading, setLoading] = useState(true)
+
     const [selectedApplicant, setSelectedApplicant] = useState(null);
 
-    const fetchApplications = useCallback(async () => {
-        try {
-            setLoading(true)
-            const response = await axiosInstance.get(
-                API_PATHS.APPLICATIONS.GET_ALL_APPLICATIONS(jobId)
-            );
-            setApplications(response?.data)
-        } catch (error) {
-            console.log("Failed to fetch applications", error)
-        } finally {
-            setLoading(false);
-        }
-    }, [jobId])
+    const {
+        data: response,
+        isLoading,
+    } = useGetApplicationByJobIdQuery(jobId, {
+        skip: !jobId,
+    });
 
     useEffect(() => {
-        if (jobId) fetchApplications();
-        else navigate('/manage-jobs')
-    }, [jobId, fetchApplications, navigate])
+        if (!jobId) {
+            navigate('/manage-jobs')
+        }
+    }, [jobId, navigate])
 
-    // Group applications by job
     const groupedApplications = useMemo(() => {
-        const filtered = applications.filter((app) => app.job.title.toLowerCase());
+        if (!response || !Array.isArray(response)) return {};
+
+        const filtered = response.filter((app) =>
+            app?.job?.title?.toLowerCase()
+        );
 
         return filtered.reduce((acc, app) => {
             const jobId = app.job._id;
+
             if (!acc[jobId]) {
                 acc[jobId] = {
                     job: app.job,
                     applications: [],
-                }
+                };
             }
-            acc[jobId].applications.push(app)
+
+            acc[jobId].applications.push(app);
             return acc;
-        }, {})
-    }, [applications])
+        }, {});
+    }, [response]);
 
     const handleDownloadResume = (resumeUrl) => {
         window.open(resumeUrl, "_blank")
@@ -70,7 +66,7 @@ const ApplicationViewer = () => {
 
     return (
         <DashboardLayout activeMenu="manage-jobs">
-            {loading && (
+            {isLoading && (
                 <div className="min-h-screen bg-gray-50 flex items-center justify-center">
                     <div className="text-center">
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
@@ -241,7 +237,6 @@ const ApplicationViewer = () => {
                         handleDownloadResume={handleDownloadResume}
                         handleClose={() => {
                             setSelectedApplicant(null);
-                            fetchApplications();
                         }}
                     />
                 )}

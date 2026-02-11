@@ -4,17 +4,21 @@ import {
     Loader
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast'
+import { useResendVerificationOtpMutation, useVerifyEmailMutation } from '../../store/slices/authApiSlice';
 
 const VerifyEmail = () => {
 
+    const [verifyEmail] = useVerifyEmailMutation();
+
+    const [resendOtp] = useResendVerificationOtpMutation();
+
     const navigate = useNavigate();
 
-    const emailRegister = localStorage.getItem("registerEmail");
-    const emailLogin = localStorage.getItem("loginEmail");
+    const emailRegister = localStorage.getItem("email");
 
-    const email = emailRegister || emailLogin;
+    const email = emailRegister
 
     const [otpValues, setOtpValues] = useState(Array(6).fill(""));
     const inputRefs = useRef([]);
@@ -22,6 +26,12 @@ const VerifyEmail = () => {
     const [loading, setLoading] = useState(false);
     const [isButtonVisible, setIsButtonVisible] = useState(true);
     const [timer, setTimer] = useState(0);
+
+    const [formState, setFormState] = useState({
+        loading: false,
+        errors: {},
+        success: false
+    })
 
     /* ---------------- OTP HANDLING ---------------- */
 
@@ -45,6 +55,18 @@ const VerifyEmail = () => {
 
     const otp = otpValues.join("");
 
+    const handlePaste = (e) => {
+        e.preventDefault();
+        const paste = e.clipboardData.getData("text").trim();
+        if (!/^\d{6}$/.test(paste)) return; // only allow 6 digits
+
+        const split = paste.split("");
+        setOtpValues(split);
+
+        // Focus the last input
+        inputRefs.current[5]?.focus();
+    };
+
     /* ---------------- SUBMIT ---------------- */
 
     const handleSubmit = async (e) => {
@@ -58,13 +80,31 @@ const VerifyEmail = () => {
         try {
             setLoading(true);
 
-            // TODO: replace with your API call
-            console.log({ otp, email });
+            const data = await verifyEmail({
+                otp,
+                email
+            }).unwrap();
 
-            toast.success("Email verified");
+            toast.success(data.message || "Email verified");
+            localStorage.removeItem("email");
             navigate("/login");
+
+            setFormState((prev) => ({
+                ...prev,
+                loading: false,
+                success: true,
+                errors: {}
+            }));
+
         } catch (err) {
-            toast.error("Invalid OTP");
+            console.error(err);
+
+            const message =
+                Array.isArray(err?.data?.message)
+                    ? err.data.message[0]
+                    : err?.data?.message || "Invalid OTP";
+
+            toast.error(message);
         } finally {
             setLoading(false);
         }
@@ -74,18 +114,34 @@ const VerifyEmail = () => {
 
     const handleResend = async () => {
         try {
-            // TODO: replace with resend API
-            console.log("Resend OTP", email);
+            setLoading(true);
 
-            toast.success("OTP resent");
+            const data = await resendOtp({
+                email,
+            }).unwrap();
+
+            toast.success(data.message || "OTP resent");
 
             setOtpValues(Array(6).fill(""));
             inputRefs.current[0]?.focus();
 
             setIsButtonVisible(false);
             setTimer(120);
-        } catch {
-            toast.error("Failed to resend OTP");
+        } catch (err) {
+            console.error(err);
+
+            const message =
+                Array.isArray(err?.data?.message)
+                    ? err.data.message[0]
+                    : err?.data?.message ||
+                    (err?.status === 429
+                        ? "Too many requests. Please wait before retrying."
+                        : "Failed to resend OTP");
+
+            toast.error(message);
+        }
+        finally {
+            setLoading(false);
         }
     };
 
@@ -139,15 +195,26 @@ const VerifyEmail = () => {
                     <div className="flex justify-center gap-2">
                         {otpValues.map((v, i) => (
                             <input
-                                key={i}
                                 ref={(el) => (inputRefs.current[i] = el)}
-                                value={v}
-                                maxLength={1}
+                                value={otpValues[i]}
                                 onChange={(e) => handleInputChange(e.target.value, i)}
                                 onKeyUp={(e) => handleKeyUp(e, i)}
+                                onPaste={handlePaste} // <-- important
+                                maxLength={1}
                                 className="w-10 h-10 border rounded text-center font-bold"
                             />
                         ))}
+                        {/* {otpValues.map((v, i) => (
+                            <input
+                                key={i}
+                                ref={(el) => (inputRefs.current[i] = el)}
+                                value={v}
+                                onChange={(e) => handleInputChange(e.target.value, i)}
+                                onKeyUp={(e) => handleKeyUp(e, i)}
+                                className="w-10 h-10 border rounded text-center font-bold"
+                                maxLength={1}
+                            />
+                        ))} */}
                     </div>
 
                     <button
@@ -163,9 +230,9 @@ const VerifyEmail = () => {
 
                     <p className="text-center text-sm">
                         Already have an account?{" "}
-                        <a href="/login" className="text-blue-600">
+                        <Link to="/login" className="text-blue-600">
                             Login
-                        </a>
+                        </Link>
                     </p>
                 </form>
             </div>

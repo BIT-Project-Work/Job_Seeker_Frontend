@@ -10,18 +10,20 @@ import {
 } from 'lucide-react'
 import { useState } from "react"
 import { validateEmail, validatePassword } from "../../utils/helper";
-import axiosInstance from "../../utils/axiosInstance";
-import { API_PATHS } from "../../utils/apiPaths";
-import { useAuth } from "../../context/useAuth";
 import { useNavigate, Link } from "react-router-dom";
+import { useLoginMutation } from "../../store/slices/authApiSlice";
+import { useDispatch } from "react-redux";
+import { setCredentials } from "../../store/slices/authSlice";
+import toast from 'react-hot-toast'
 
 const Login = () => {
 
     const MotionDiv = motion.div;
 
-    const { login } = useAuth();
+    const [login] = useLoginMutation();
 
     const navigate = useNavigate();
+    const dispatch = useDispatch();
 
     const [formData, setFormData] = useState({
         email: '',
@@ -81,22 +83,19 @@ const Login = () => {
         if (!validateForm()) return;
 
         setFormState(prev => ({ ...prev, loading: true }))
-        console.log(formData)
 
         try {
             // Login API Integration
-            const response = await axiosInstance.post(API_PATHS.AUTH.LOGIN, {
+            const { accessToken, user } = await login({
                 email: formData.email,
                 password: formData.password,
-                rememberMe: formData.rememberMe,
-            });
+                rememberMe: formData.rememberMe
+            }).unwrap();
 
-            const { token, role } = response.data;
+            //! Save to redux 
+            dispatch(setCredentials({ user, accessToken: accessToken }));
 
-            if (token) {
-                login(response.data, token);
-            }
-
+            toast.success("User logged in");
             setFormState(prev => ({
                 ...prev,
                 loading: false,
@@ -104,39 +103,23 @@ const Login = () => {
                 errors: {}
             }))
 
-            // if (token) {
-            //     login(response.data, token);
-
-            //     // Redirect based on role
-            //     setTimeout(() => {
-            //         window.location.href =
-            //             role === "EMPLOYER"
-            //                 ? "/employer-dashboard"
-            //                 : "/find-jobs";
-            //     }, 2000)
-            // }
-
-            // Redirect based on user role
-            // setTimeout(() => {
-            //     const redirectPath = user.role === 'EMPLOYER'
-            //         ? "/employer-dashboard"
-            //         : "/find-jobs";
-            //     window.location.href = redirectPath;
-            // }, 1500);
-
             navigate(
-                role === "EMPLOYER" ? "/employer-dashboard" : "/find-jobs",
+                user.role === "EMPLOYER" ? "/employer-dashboard" : "/find-jobs",
                 { replace: true }
             );
 
-        } catch (error) {
+        } catch (err) {
+            const message =
+                err?.data?.message ||
+                err?.error ||
+                "Login failed. Please check your credentials";
+
             setFormState(prev => ({
                 ...prev,
                 loading: false,
-                errors: {
-                    submit: error.response?.data?.message || "Login failed. Please check your credentials"
-                }
+                errors: { submit: message },
             }))
+            toast.error(message);
         }
     }
 

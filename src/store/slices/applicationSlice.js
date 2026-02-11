@@ -25,10 +25,7 @@ export const applicationSlice = apiSlice.injectEndpoints({
         // 👤 Get applicants for a job
         getApplicationByJobId: builder.query({
             query: (jobId) => `/applications/job/${jobId}`,
-            providesTags: (result = []) => [
-                "Applications",
-                ...result.map(({ id }) => ({ type: "Applications", id })),
-            ],
+            providesTags: ["Applications"],
         }),
 
         // 👤 Get applications of a user
@@ -50,10 +47,10 @@ export const applicationSlice = apiSlice.injectEndpoints({
 
         // ✏️ Update application status
         updateApplicationStatus: builder.mutation({
-            query: ({ id, data }) => ({
+            query: ({ id, status  }) => ({
                 url: `/applications/${id}/status`,
                 method: "PATCH",
-                body: data,
+                body: { status  },
             }),
             invalidatesTags: ["Applications", "Analytics"],
         }),

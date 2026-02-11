@@ -1,22 +1,23 @@
 import { useEffect, useState } from "react"
 import { Save, X, Trash2 } from 'lucide-react'
 import { useAuth } from "../../context/useAuth"
-import axiosInstance from "../../utils/axiosInstance"
-import { API_PATHS } from "../../utils/apiPaths"
 import toast from "react-hot-toast"
-import uploadImage from "../../utils/uploadImage"
 import Navbar from "../../components/layout/Navbar"
 import { Link } from "react-router-dom"
+import { useDeleteResumeMutation, useUpdateProfileMutation } from "../../store/slices/userSlice"
+import { useUploadImage } from "../../utils/imageUpload"
 
 const UserProfile = () => {
+
+    const DEFAULT_AVATAR = "/avatar-placeholder.png"
 
     const { user, updateUser } = useAuth();
 
     const [profileData, setProfileData] = useState({
         name: user?.name || "",
         email: user?.email || "",
-        avatar: user?.avatar || "",
-        resume: user?.resume || "",
+        avatar: user?.avatar || null,
+        resume: user?.resume || null,
     });
 
     const [formData, setFormData] = useState({ ...profileData })
@@ -30,52 +31,60 @@ const UserProfile = () => {
         }))
     }
 
+    const { uploadImage } = useUploadImage();
+
     const handleImageUpload = async (file, type) => {
-        setUploading((prev) => ({ ...prev, [type]: true }))
+        setUploading((prev) => ({ ...prev, [type]: true }));
 
         try {
-            const imgUploadRes = await uploadImage(file)
-            const avatarUrl = imgUploadRes.imageUrl || "";
+            const res = await uploadImage(file);
 
-            // Update form data with new image URL
-            handleInputChange(type, avatarUrl)
+            const imageUrl =
+                res?.imageUrl ||
+                res?.data?.imageUrl ||
+                "";
+
+            if (!imageUrl) {
+                throw new Error("Image URL not returned");
+            }
+
+            handleInputChange(type, imageUrl);
         } catch (error) {
-            console.error("Image upload failed:", error)
+            toast.error("Image upload failed. Try again.");
+            console.error("Image upload failed:", error);
         } finally {
-            setUploading((prev) => ({ ...prev, [type]: false }))
+            setUploading((prev) => ({ ...prev, [type]: false }));
         }
     };
 
     const handleImageChange = (e, type) => {
-        const file = e.target.files[0]
+        const file = e.target.files[0];
 
-        if (file) {
-            // Create preview url
-            const previewUrl = URL.createObjectURL(file);
-            handleInputChange(type, previewUrl)
+        if (!file) return;
 
-            // Upload Image
-            handleImageUpload(file, type)
-        }
-    }
+        const previewUrl = URL.createObjectURL(file);
+        handleInputChange(type, previewUrl);
+
+        handleImageUpload(file, type);
+
+        e.target.value = "";
+    };
+
+
+    const [updateProfile] = useUpdateProfileMutation();
 
     const handleSave = async () => {
         setSaving(true);
 
         try {
-            const response = await axiosInstance.patch(
-                API_PATHS.AUTH.UPDATE_PROFILE,
-                formData
-            );
+            const res = await updateProfile(formData).unwrap();
 
-            if (response.status === 200) {
-                toast.success("Profile Details Updated Successfully!!")
-                // Update profile data and exit edit mode
-                setProfileData({ ...formData })
-                updateUser({ ...formData })
-            }
+            toast.success(res?.message || "Profile Details Updated Successfully!!");
+            setProfileData({ ...formData })
+            setFormData(formData);
+            // updateUser(formData);
         } catch (error) {
-            console.error("Profile update failed. ", error)
+            toast.error(error?.data?.message || "Update failed");
         } finally {
             setSaving(false);
         }
@@ -85,39 +94,57 @@ const UserProfile = () => {
         setFormData({ ...profileData })
     }
 
+    const [deleteResume] = useDeleteResumeMutation()
+
     const DeleteResume = async () => {
         setSaving(true);
-        try {
-            const response = await axiosInstance.post(
-                API_PATHS.AUTH.DELETE_RESUME,
-                {
-                    resumeUrl: user.resume || ""
-                }
-            );
 
-            if (response.status === 200) {
-                toast.success("Resume Deleted Successfully!")
-                setProfileData({ ...formData, resume: "" })
-                updateUser({ ...formData, resume: "" })
-            }
+        console.log("Deleting resume:", {
+            user: user?.resume,
+            profileData: profileData.resume,
+            formData: formData.resume,
+        });
+        try {
+            await deleteResume({
+                resumeUrl: profileData.resume
+            }).unwrap();
+
+            toast.success("Resume Deleted Successfully!");
+
+            setProfileData((prev) => ({ ...prev, resume: "" }));
+            setFormData((prev) => ({ ...prev, resume: "" }));
+
         } catch (error) {
-            console.error("Profile update failed: ", error)
+            toast.error(error?.data?.message || "Profile Update failed");
         } finally {
             setSaving(false);
         }
     };
 
-    useEffect(() => {
-        const userData = {
-            name: user?.name || "",
-            email: user?.email || "",
-            avatar: user?.avatar || "",
-        };
 
-        setProfileData({ ...userData })
-        setFormData({ ...userData })
-        return () => { };
-    }, [user])
+    useEffect(() => {
+        if (!user) return;
+
+        setProfileData((prev) => {
+            if (prev.email) return prev; // already initialized
+            return {
+                name: user.name || "",
+                email: user.email || "",
+                avatar: user.avatar || null,
+                resume: user.resume || null,
+            };
+        });
+
+        setFormData((prev) => {
+            if (prev.email) return prev;
+            return {
+                name: user.name || "",
+                email: user.email || "",
+                avatar: user.avatar || null,
+                resume: user.resume || null,
+            };
+        });
+    }, [user]);
 
     return (
         <div className="bg-linear-to-br from-blue-50 via-white to-purple-50">
@@ -136,7 +163,7 @@ const UserProfile = () => {
                                 <div className="flex items-center space-x-4">
                                     <div className="relative">
                                         <img
-                                            src={formData?.avatar}
+                                            src={formData?.avatar || DEFAULT_AVATAR}
                                             alt="Avatar"
                                             className="w-20 h-20 rounded-full object-cover border-4 border-gray-200"
                                         />
@@ -193,13 +220,13 @@ const UserProfile = () => {
                                         <div className="flex items-center gap-2">
                                             <p className="text-sm text-gray-600">
                                                 Link:{" "}
-                                                <a
-                                                    href={user?.resume}
+                                                <Link
+                                                    to={user?.resume}
                                                     className="text-blue-500 underline cursor-pointer"
                                                     target="_blank"
                                                 >
                                                     {user?.resume}
-                                                </a>
+                                                </Link>
                                             </p>
 
                                             <button

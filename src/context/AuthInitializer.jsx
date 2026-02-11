@@ -1,20 +1,32 @@
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
-import { setCredentials, clearCredentials } from "../store/slices/authSlice";
-import { useMeQuery } from "../store/slices/authApiSlice";
+import { setCredentials } from "../store/slices/authSlice";
+import { useRefreshMutation } from "../store/slices/authApiSlice";
 
 const AuthInitializer = ({ children }) => {
     const dispatch = useDispatch();
-    const { data, isSuccess, isError } = useMeQuery();
+    const [refresh] = useRefreshMutation();
 
     useEffect(() => {
-        if (isSuccess && data?.user) {
-            dispatch(setCredentials({ user: data.user }));
-        }
-        if (isError) {
-            dispatch(clearCredentials());
-        }
-    }, [isSuccess, isError, data, dispatch]);
+        const initAuth = async () => {
+            try {
+                const res = await refresh().unwrap();
+
+                if (res?.user && res?.accessToken) {
+                    dispatch(setCredentials({
+                        user: res.user,
+                        accessToken: res.accessToken,
+                    }));
+                }
+            } catch (err) {
+                // IMPORTANT:
+                // Do nothing here.
+                // ProtectedRedux will handle unauthenticated state.
+            }
+        };
+
+        initAuth();
+    }, [dispatch, refresh]);
 
     return children;
 };

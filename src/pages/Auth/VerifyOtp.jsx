@@ -6,15 +6,18 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast'
+import { useResendForgotPasswordOtpMutation, useVerifyOtpMutation } from '../../store/slices/authApiSlice';
 
 const VerifyOtp = () => {
 
+    const [verifyOtp] = useVerifyOtpMutation();
+    const [resendOtp] = useResendForgotPasswordOtpMutation();
+
     const navigate = useNavigate();
 
-    const emailRegister = localStorage.getItem("registerEmail");
-    const emailLogin = localStorage.getItem("loginEmail");
+    const emailRegister = localStorage.getItem("email");
 
-    const email = emailRegister || emailLogin;
+    const email = emailRegister
 
     const [otpValues, setOtpValues] = useState(Array(6).fill(""));
     const inputRefs = useRef([]);
@@ -45,6 +48,19 @@ const VerifyOtp = () => {
 
     const otp = otpValues.join("");
 
+    const handlePaste = (e) => {
+        e.preventDefault();
+        const paste = e.clipboardData.getData("text").trim();
+        if (!/^\d{6}$/.test(paste)) return; // only allow 6 digits
+
+        const split = paste.split("");
+        setOtpValues(split);
+
+        // Focus the last input
+        inputRefs.current[5]?.focus();
+    };
+
+
     /* ---------------- SUBMIT ---------------- */
 
     const handleSubmit = async (e) => {
@@ -58,13 +74,24 @@ const VerifyOtp = () => {
         try {
             setLoading(true);
 
-            // TODO: replace with your API call
-            console.log({ otp, email });
+            const data = await verifyOtp({
+                otp,
+                email,
+                type: 'FORGOT_PASSWORD'
+            }).unwrap();
 
-            toast.success("Email verified");
-            navigate("/login");
+            localStorage.setItem('otp', otp)
+            toast.success(data.message || "OTP verified");
+            navigate("/reset_password");
         } catch (err) {
-            toast.error("Invalid OTP");
+            console.error(err);
+
+            const message =
+                Array.isArray(err?.data?.message)
+                    ? err.data.message[0]
+                    : err?.data?.message || "Invalid OTP";
+
+            toast.error(message);
         } finally {
             setLoading(false);
         }
@@ -74,10 +101,13 @@ const VerifyOtp = () => {
 
     const handleResend = async () => {
         try {
-            // TODO: replace with resend API
-            console.log("Resend OTP", email);
+            setLoading(true);
 
-            toast.success("OTP resent");
+            const data = await resendOtp({
+                email
+            }).unwrap();
+
+            toast.success(data.message || "OTP resent");
 
             setOtpValues(Array(6).fill(""));
             inputRefs.current[0]?.focus();
@@ -85,7 +115,20 @@ const VerifyOtp = () => {
             setIsButtonVisible(false);
             setTimer(120);
         } catch {
-            toast.error("Failed to resend OTP");
+            console.error(err);
+
+            const message =
+                Array.isArray(err?.data?.message)
+                    ? err.data.message[0]
+                    : err?.data?.message ||
+                    (err?.status === 429
+                        ? "Too many requests. Please wait before retrying."
+                        : "Failed to resend OTP");
+
+            toast.error(message);
+        }
+        finally {
+            setLoading(false);
         }
     };
 
@@ -141,10 +184,11 @@ const VerifyOtp = () => {
                             <input
                                 key={i}
                                 ref={(el) => (inputRefs.current[i] = el)}
-                                value={v}
-                                maxLength={1}
+                                value={otpValues[i]}
                                 onChange={(e) => handleInputChange(e.target.value, i)}
                                 onKeyUp={(e) => handleKeyUp(e, i)}
+                                onPaste={handlePaste} // <-- important
+                                maxLength={1}
                                 className="w-10 h-10 border rounded text-center font-bold"
                             />
                         ))}
@@ -163,7 +207,7 @@ const VerifyOtp = () => {
                     </button>
 
                     <p className="text-center text-sm">
-                        Already have an account?{" "}
+                        Remember your password?{" "}
                         <Link to="/login" className="text-blue-600">
                             Login
                         </Link>

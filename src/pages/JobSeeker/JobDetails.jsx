@@ -4,57 +4,44 @@ import {
     Building2,
     Clock,
     Users,
-    Building
 } from 'lucide-react'
 import { useAuth } from '../../context/useAuth'
 import { useParams } from 'react-router-dom'
-import axiosInstance from '../../utils/axiosInstance'
-import { API_PATHS } from '../../utils/apiPaths'
-import { useCallback, useEffect, useState } from 'react'
 import Navbar from '../../components/layout/Navbar'
 import moment from 'moment'
 import StatusBadge from '../../components/StatusBadge'
 import toast from 'react-hot-toast'
+import { useGetJobByIdQuery } from '../../store/slices/JobSlice'
+import { useApplyToJobMutation } from '../../store/slices/applicationSlice'
 
 const JobDetails = () => {
 
-    const { user } = useAuth();
     const { jobId } = useParams();
 
-    const [jobDetails, setJobDetails] = useState(null);
+    const { user } = useAuth();
 
-    const getJobDetailsById = useCallback(async () => {
-        try {
-            const response = await axiosInstance.get(
-                API_PATHS.JOBS.GET_JOB_By_ID(jobId), {
-                params: { userId: user?._id || null }
-            });
-            setJobDetails(response.data)
-        } catch (error) {
-            console.error("Error fetching job details:", error)
-        }
-    }, [jobId, user])
+    const { data: jobDetails, refetch } = useGetJobByIdQuery(
+        { jobId, userId: user?._id || "" }, // 👈 pass as object
+        { skip: !jobId }
+    );
+    console.log(jobDetails)
+
+    const [applyJob] = useApplyToJobMutation()
 
     const applyToJob = async () => {
-        try {
-            if (jobId) {
-                await axiosInstance.post(API_PATHS.APPLICATIONS.APPLY_TO_JOB(jobId))
-                toast.success("Applied to job successfully!")
-            }
+        if (!jobId) return
 
-            getJobDetailsById();
+        try {
+            await applyJob({
+                jobId,
+                userId: user._id,
+            }).unwrap();
+            refetch();
+            toast.success("Applied to job successfully!")
         } catch (error) {
-            console.log("Error", error)
-            const errorMsg = error?.response?.data?.message;
-            toast.error(errorMsg || "Something went wrong! Try again later")
+            toast.error(error?.data?.message || "Something went wrong! Try again later")
         }
     }
-
-    useEffect(() => {
-        if (jobId && user) {
-            getJobDetailsById();
-        }
-    }, [jobId, user, getJobDetailsById])
 
     return (
         <div className="bg-linear-to-br from-blue-50 via-white to-purple-50">

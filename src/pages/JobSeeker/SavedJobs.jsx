@@ -6,47 +6,39 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../../context/useAuth'
 import { useNavigate } from 'react-router-dom'
-import axiosInstance from '../../utils/axiosInstance'
-import { API_PATHS } from '../../utils/apiPaths'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import Navbar from '../../components/layout/Navbar'
 import JobCard from '../../components/Cards/JobCard'
 import toast from 'react-hot-toast'
+import { useGetUserSavedJobsQuery, useUnSaveJobMutation } from '../../store/slices/savedJobSlice'
 
 const SavedJobs = () => {
 
     const { user } = useAuth();
     const navigate = useNavigate();
 
-    const [savedJobList, setSavedJobList] = useState([])
     const [viewMode, setViewMode] = useState("grid")
 
-    const getSavedJobs = async () => {
-        try {
-            const response = await axiosInstance.get(API_PATHS.JOBS.GET_SAVED_JOBS);
-            setSavedJobList(response.data)
-        } catch (error) {
-            console.error("Error fetching job details: ", error)
-        }
-    };
+    const [unSaveJob] = useUnSaveJobMutation();
+
+    const {
+        data,
+        isLoading,
+        isError,
+    } = useGetUserSavedJobsQuery();
+
+    const savedJobList = Array.isArray(data)
+        ? data
+        : data?.data || [];
 
     const handleUnsaveJob = async (jobId) => {
         try {
-            await axiosInstance.delete(API_PATHS.JOBS.UNSAVE_JOB(jobId))
-            toast.success("Job removed successfully!")
-
-            getSavedJobs();
+            await unSaveJob(jobId).unwrap();
+            toast.success("Job removed successfully!");
         } catch (error) {
-            toast.error("Something went wrong! Try again later")
-            console.log(error)
+            toast.error("Something went wrong! Try again later");
         }
-    }
-
-    useEffect(() => {
-        if (user) {
-            getSavedJobs();
-        }
-    }, [user])
+    };
 
     return (
         <div className='bg-linear-to-br from-blue-50 via-white to-purple-50'>

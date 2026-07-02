@@ -4,7 +4,6 @@ import {
     Grid,
     List
 } from 'lucide-react'
-import { useAuth } from '../../context/useAuth'
 import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import Navbar from '../../components/layout/Navbar'
@@ -14,29 +13,24 @@ import { useGetUserSavedJobsQuery, useUnSaveJobMutation } from '../../store/slic
 
 const SavedJobs = () => {
 
-    const { user } = useAuth();
     const navigate = useNavigate();
 
     const [viewMode, setViewMode] = useState("grid")
 
     const [unSaveJob] = useUnSaveJobMutation();
 
-    const {
-        data,
-        isLoading,
-        isError,
-    } = useGetUserSavedJobsQuery();
+    const { data: savedJobList = [], isLoading, isError } = useGetUserSavedJobsQuery();
 
-    const savedJobList = Array.isArray(data)
-        ? data
-        : data?.data || [];
+    const validSavedJobs = savedJobList.filter(savedJob => savedJob.job !== null);
 
     const handleUnsaveJob = async (jobId) => {
         try {
             await unSaveJob(jobId).unwrap();
             toast.success("Job removed successfully!");
         } catch (error) {
-            toast.error("Something went wrong! Try again later");
+            {
+                toast.error(error?.data?.message || "Something went wrong")
+            }
         }
     };
 
@@ -82,7 +76,7 @@ const SavedJobs = () => {
                         {/* Content Sections */}
                         <div className="px-0 pb-8 space-y-8">
                             {/* Job Grid */}
-                            {savedJobList.length === 0 ? (
+                            {validSavedJobs.length === 0 ? (
                                 <div className="text-center py-16 lg:py-20 bg-white/60 backdrop-blur-xl rounded-2xl border border-white/20">
                                     <div className="text-gray-300 mb-6">
                                         <Bookmark className="w-16 h-16 mx-auto" />
@@ -105,7 +99,7 @@ const SavedJobs = () => {
                                     <div
                                         className={viewMode === "grid" ? "grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 gap-4 lg:gap-6" : "space-y-4 lg:space-y-6"}
                                     >
-                                        {savedJobList.map((savedJob) => (
+                                        {validSavedJobs.map((savedJob) => (
                                             <JobCard
                                                 key={savedJob._id}
                                                 job={savedJob?.job}

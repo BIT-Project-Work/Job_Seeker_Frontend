@@ -11,7 +11,7 @@ import Navbar from '../../components/layout/Navbar'
 import moment from 'moment'
 import StatusBadge from '../../components/StatusBadge'
 import toast from 'react-hot-toast'
-import { useGetJobByIdQuery } from '../../store/slices/JobSlice'
+import { useGetJobByIdQuery } from '../../store/slices/jobSlice'
 import { useApplyToJobMutation } from '../../store/slices/applicationSlice'
 
 const JobDetails = () => {
@@ -24,7 +24,6 @@ const JobDetails = () => {
         { jobId, userId: user?._id || "" }, // 👈 pass as object
         { skip: !jobId }
     );
-    console.log(jobDetails)
 
     const [applyJob] = useApplyToJobMutation()
 
@@ -34,7 +33,6 @@ const JobDetails = () => {
         try {
             await applyJob({
                 jobId,
-                userId: user._id,
             }).unwrap();
             refetch();
             toast.success("Applied to job successfully!")

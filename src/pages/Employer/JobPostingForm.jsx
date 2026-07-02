@@ -1,5 +1,5 @@
 import DashboardLayout from "../../components/layout/DashboardLayout"
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import {
     AlertCircle,
     MapPin,
@@ -17,12 +17,14 @@ import SelectField from "../../components/Input/SelectField"
 import TextareaField from "../../components/Input/TextareaField"
 import JobPostingPreview from "../../components/Cards/JobPostingPreview"
 import { useCreateJobMutation, useGetJobByIdQuery, useUpdateJobMutation } from "../../store/slices/jobSlice"
+import { useAuth } from "../../context/useAuth"
 
 const JobPostingForm = () => {
 
     const navigate = useNavigate()
     const location = useLocation();
     const jobId = location?.state?.jobId || null;
+    const { user } = useAuth();
 
     const [formData, setFormData] = useState({
         jobTitle: "",
@@ -39,9 +41,8 @@ const JobPostingForm = () => {
     // const [isSubmitting, setIsSubmitting] = useState(false)
     const [isPreview, setIsPreview] = useState(false)
 
-    const { data, isLoading } = useGetJobByIdQuery(jobId, {
-        skip: !jobId
-    })
+    const { data, isLoading } = useGetJobByIdQuery({ jobId, userId: user?._id || "" }, // 👈 pass as object
+        { skip: !jobId })
 
     const [createJob, { isLoading: isCreating }] = useCreateJobMutation()
     const [updateJob, { isLoading: isUpdating }] = useUpdateJobMutation()

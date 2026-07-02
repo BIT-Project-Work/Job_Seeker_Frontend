@@ -10,7 +10,7 @@ import Navbar from '../../components/layout/Navbar'
 import JobCard from '../../components/Cards/JobCard'
 import { useSaveJobMutation, useUnSaveJobMutation } from '../../store/slices/savedJobSlice'
 import { useApplyToJobMutation } from '../../store/slices/applicationSlice'
-import { useGetJobsWithFiltersQuery } from '../../store/slices/JobSlice'
+import { useGetJobsWithFiltersQuery } from '../../store/slices/jobSlice'
 
 const JobSeekerDashboard = () => {
 
@@ -131,7 +131,7 @@ const JobSeekerDashboard = () => {
 
     const applyToJob = async (jobId) => {
         try {
-            await applyJob(jobId).unwrap();
+            await applyJob({jobId}).unwrap();
             toast.success("Applied to job successfully!");
         } catch (err) {
             toast.error(

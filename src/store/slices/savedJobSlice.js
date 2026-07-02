@@ -7,10 +7,7 @@ export const savedJobsSlice = apiSlice.injectEndpoints({
         // 👥 Get all user saved jobs
         getUserSavedJobs: builder.query({
             query: () => "/saved-jobs/my",
-            providesTags: (result = []) => [
-                "SavedJobs",
-                ...result.map(({ id }) => ({ type: "SavedJobs", id })),
-            ],
+            providesTags: ["SavedJobs"],
         }),
 
         //Save a job

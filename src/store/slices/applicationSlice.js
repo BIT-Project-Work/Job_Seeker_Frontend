@@ -38,7 +38,7 @@ export const applicationSlice = apiSlice.injectEndpoints({
         }),
 
         applyToJob: builder.mutation({
-            query: (jobId) => ({
+            query: ({ jobId }) => ({
                 url: `/applications/${jobId}`,
                 method: "POST",
             }),

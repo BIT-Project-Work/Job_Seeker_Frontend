@@ -1,5 +1,5 @@
 import { ChevronDown } from "lucide-react"
-import { useNavigate } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 
 const ProfileDropdown = ({
     isOpen,
@@ -42,20 +42,20 @@ const ProfileDropdown = ({
                         <p className="text-sm font-medium text-gray-900">{companyName}</p>
                         <p className="text-xs text-gray-500">{email}</p>
                     </div>
-                    <a
+                    <Link
+                        to={userRole === "JOBSEEKER" ? "/profile" : "/company-profile"}
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                        onClick={() => navigate(userRole === 'JOBSEEKER' ? '/profile' : '/company-profile')}
                     >
                         View Profile
-                    </a>
+                    </Link>
                     <div className="border-t border-gray-100 mt-2 pt-2">
-                        <a
-                            href="#"
+                        <Link
+                            to="#"
                             onClick={onLogout}
                             className="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
                         >
                             Sign out
-                        </a>
+                        </Link>
                     </div>
                 </div>
             )}

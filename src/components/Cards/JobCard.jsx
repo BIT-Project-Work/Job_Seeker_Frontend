@@ -66,9 +66,9 @@ const JobCard = ({ job, onClick, onToggleSave, onApply, saved, hideApply }) => {
                     </span>
                     <span
                         className={`px-3 py-1 rounded-full font-medium ${job?.type === "Full-Time" ? "bg-green-100 text-green-800"
-                            : job.type === "Part-Time"
+                            : job?.type === "Part-Time"
                                 ? "bg-yellow-100 text-yellow-800"
-                                : job.type === "Contract"
+                                : job?.type === "Contract"
                                     ? "bg-purple-100 text-purple-800" : "bg-blue-100 text-blue-800"
                             }`}
 

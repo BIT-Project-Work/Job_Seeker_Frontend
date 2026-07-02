@@ -1,52 +1,23 @@
 import {
   BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate
 } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast';
-import SignUp from './pages/Auth/SignUp';
-import Login from './pages/Auth/Login';
-import JobSeekerDashboard from './pages/JobSeeker/JobSeekerDashboard';
-import JobDetails from './pages/JobSeeker/JobDetails';
-import SavedJobs from './pages/JobSeeker/SavedJobs';
-import UserProfile from './pages/JobSeeker/UserProfile';
-import ProtectedRoute from './routes/ProtectedRoute';
-import EmployerDashboard from './pages/Employer/EmployerDashboard';
-import JobPostingForm from './pages/Employer/JobPostingForm';
-import ManageJobs from './pages/Employer/ManageJobs';
-import EmployeeProfilePage from './pages/Employer/EmployeeProfilePage';
-import ApplicationViewer from './pages/Employer/ApplicationViewer';
-import LandingPage from './pages/LandingPage/LandingPage';
-import { AuthProvider } from './context/AuthContext';
+// import { AuthProvider } from './context/AuthContext';
+import AppRoutes from './AppRoutes';
+import AuthInitializer from './context/AuthInitializer';
+import { Provider } from 'react-redux';
+import { store } from './store';
 
 const App = () => {
+
   return (
-    <AuthProvider>
+    <AuthInitializer>
+      {/* <AuthProvider> */}
+
       <Router>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/signup" element={<SignUp />} />
-          <Route path="/login" element={<Login />} />
+        {/*//! Loading Bar  */}
+        <AppRoutes />
 
-          <Route path="/find-jobs" element={<JobSeekerDashboard />} />
-          <Route path="/job/:jobId" element={<JobDetails />} />
-          <Route path="/saved-jobs" element={<SavedJobs />} />
-          <Route path="/profile" element={<UserProfile />} />
-
-          {/* Protected Routes */}
-          <Route element={<ProtectedRoute requiredRole="EMPLOYER" />}>
-            <Route path="/employer-dashboard" element={<EmployerDashboard />} />
-            <Route path="/post-job" element={<JobPostingForm />} />
-            <Route path="/manage-jobs" element={<ManageJobs />} />
-            <Route path="/applicants" element={<ApplicationViewer />} />
-            <Route path="/company-profile" element={<EmployeeProfilePage />} />
-          </Route>
-
-          {/* Catch all route */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
       </Router>
 
       <Toaster
@@ -57,7 +28,9 @@ const App = () => {
           }
         }}
       />
-    </AuthProvider>
+
+      {/* </AuthProvider> */}
+    </AuthInitializer>
   )
 }
 export default App

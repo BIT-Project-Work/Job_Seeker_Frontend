@@ -10,18 +10,20 @@ import {
 } from 'lucide-react'
 import { useState } from "react"
 import { validateEmail, validatePassword } from "../../utils/helper";
-import axiosInstance from "../../utils/axiosInstance";
-import { API_PATHS } from "../../utils/apiPaths";
-import { useAuth } from "../../context/useAuth";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { useLoginMutation } from "../../store/slices/authApiSlice";
+import { useDispatch } from "react-redux";
+import { setCredentials } from "../../store/slices/authSlice";
+import toast from 'react-hot-toast'
 
 const Login = () => {
 
     const MotionDiv = motion.div;
 
-    const { login } = useAuth();
+    const [login] = useLoginMutation();
 
     const navigate = useNavigate();
+    const dispatch = useDispatch();
 
     const [formData, setFormData] = useState({
         email: '',
@@ -53,6 +55,13 @@ const Login = () => {
         }
     }
 
+    const handleCheckboxChange = (e) => {
+        setFormData(prev => ({
+            ...prev,
+            rememberMe: e.target.checked
+        }));
+    };
+
     const validateForm = () => {
         const errors = {
             email: validateEmail(formData.email),
@@ -77,18 +86,16 @@ const Login = () => {
 
         try {
             // Login API Integration
-            const response = await axiosInstance.post(API_PATHS.AUTH.LOGIN, {
+            const { accessToken, user } = await login({
                 email: formData.email,
                 password: formData.password,
-                // rememberMe: formData.rememberMe,
-            });
+                rememberMe: formData.rememberMe
+            }).unwrap();
 
-            const { token, role } = response.data;
+            //! Save to redux 
+            dispatch(setCredentials({ user, accessToken: accessToken }));
 
-            if (token) {
-                login(response.data, token);
-            }
-
+            toast.success("User logged in");
             setFormState(prev => ({
                 ...prev,
                 loading: false,
@@ -96,39 +103,23 @@ const Login = () => {
                 errors: {}
             }))
 
-            // if (token) {
-            //     login(response.data, token);
-
-            //     // Redirect based on role
-            //     setTimeout(() => {
-            //         window.location.href =
-            //             role === "EMPLOYER"
-            //                 ? "/employer-dashboard"
-            //                 : "/find-jobs";
-            //     }, 2000)
-            // }
-
-            // Redirect based on user role
-            // setTimeout(() => {
-            //     const redirectPath = user.role === 'EMPLOYER'
-            //         ? "/employer-dashboard"
-            //         : "/find-jobs";
-            //     window.location.href = redirectPath;
-            // }, 1500);
-
             navigate(
-                role === "EMPLOYER" ? "/employer-dashboard" : "/find-jobs",
+                user.role === "EMPLOYER" ? "/employer-dashboard" : "/find-jobs",
                 { replace: true }
             );
 
-        } catch (error) {
+        } catch (err) {
+            const message =
+                err?.data?.message ||
+                err?.error ||
+                "Login failed. Please check your credentials";
+
             setFormState(prev => ({
                 ...prev,
                 loading: false,
-                errors: {
-                    submit: error.response?.data?.message || "Login failed. Please check your credentials"
-                }
+                errors: { submit: message },
             }))
+            toast.error(message);
         }
     }
 
@@ -187,39 +178,64 @@ const Login = () => {
                             </p>
                         )}
                     </div>
+
                     {/* Password */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Password
-                        </label>
+                        <div className="flex items-center justify-between mb-2">
+                            <label className="block text-sm font-medium text-gray-700">
+                                Password
+                            </label>
+
+                            <Link
+                                to="/forgot_password"
+                                className="text-sm text-blue-600 hover:underline"
+                            >
+                                Forgot password?
+                            </Link>
+                        </div>
+
                         <div className="relative">
                             <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+
                             <input
-                                type={formState.showPassword ? 'text' : 'password'}
+                                type={formState.showPassword ? "text" : "password"}
                                 name="password"
                                 value={formData.password}
                                 onChange={handleInputChange}
-                                className={`w-full pl-10 pr-12 py-3 rounded-lg border ${formState.errors.password ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors`}
+                                className={`w-full pl-10 pr-12 py-3 rounded-lg border ${formState.errors.password ? "border-red-500" : "border-gray-300"
+                                    } focus:ring-2 focus:ring-blue-500`}
                                 placeholder="Enter your password"
                             />
+
                             <button
-                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                                 type="button"
-                                onClick={() => setFormState(prev => ({ ...prev, showPassword: !prev.showPassword }))}
+                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                                onClick={() =>
+                                    setFormState((prev) => ({
+                                        ...prev,
+                                        showPassword: !prev.showPassword,
+                                    }))
+                                }
                             >
-                                {formState.showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                {formState.showPassword ? (
+                                    <EyeOff className="w-5 h-5" />
+                                ) : (
+                                    <Eye className="w-5 h-5" />
+                                )}
                             </button>
-                            {formState.errors.password && (
-                                <p className="text-red-500 text-sm mt-1 flex items-center">
-                                    <AlertCircle className="w-4 h-4 mr-1" />
-                                    {formState.errors.password}
-                                </p>
-                            )}
                         </div>
+
+                        {/* Password Error */}
+                        {formState.errors.password && (
+                            <p className="text-red-500 text-sm mt-1 flex items-center">
+                                <AlertCircle className="w-4 h-4 mr-1" />
+                                {formState.errors.password}
+                            </p>
+                        )}
 
                         {/* Submit Error */}
                         {formState.errors.submit && (
-                            <div className="bg-red border border-red-200 rounded-lg p-3">
+                            <div className="bg-red-50 border border-red-200 rounded-lg p-3 mt-3">
                                 <p className="text-red-700 text-sm flex items-center">
                                     <AlertCircle className="w-4 h-4 mr-1" />
                                     {formState.errors.submit}
@@ -227,6 +243,42 @@ const Login = () => {
                             </div>
                         )}
                     </div>
+
+                    {/* Remember Me */}
+                    <div className="inline-flex items-center">
+                        <label className="flex items-center cursor-pointer relative">
+                            <input
+                                type="checkbox"
+                                id="rememberMe"
+                                checked={formData.rememberMe}
+                                onChange={handleCheckboxChange}
+                                className="peer h-4 w-4 cursor-pointer transition-all appearance-none rounded shadow hover:shadow-md border border-slate-300 checked:bg-blue-500 checked:border-blue-700"
+                            />
+
+                            <span className="absolute text-white opacity-0 peer-checked:opacity-100 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-3.5 w-3.5"
+                                    viewBox="0 0 20 20"
+                                    fill="currentColor"
+                                >
+                                    <path
+                                        fillRule="evenodd"
+                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                        clipRule="evenodd"
+                                    />
+                                </svg>
+                            </span>
+                        </label>
+
+                        <label
+                            htmlFor="rememberMe"
+                            className="cursor-pointer ml-2 text-slate-600 text-sm"
+                        >
+                            Remember Me
+                        </label>
+                    </div>
+
 
                     {/* Submit Button */}
                     <button
@@ -248,9 +300,9 @@ const Login = () => {
                     <div className="text-center">
                         <p className="text-gray-600">
                             Don't have an account?{' '}
-                            <a href="/signup" className="text-blue-600 hover:text-blue-700 font-seemibold">
+                            <Link to="/signup" className="text-blue-600 hover:text-blue-700 font-seemibold">
                                 Create one here
-                            </a>
+                            </Link>
                         </p>
                     </div>
 

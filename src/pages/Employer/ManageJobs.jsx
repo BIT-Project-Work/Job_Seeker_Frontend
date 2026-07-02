@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import {
   Search,
   Plus,
@@ -9,12 +9,11 @@ import {
   ChevronDown,
   Users
 } from 'lucide-react'
-import axiosInstance from '../../utils/axiosInstance'
-import { API_PATHS } from '../../utils/apiPaths'
 import moment from 'moment'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import DashboardLayout from "../../components/layout/DashboardLayout"
+import { useCloseJobMutation, useDeleteJobMutation, useGetJobsEmployerQuery } from '../../store/slices/jobSlice'
 
 const ManageJobs = () => {
 
@@ -25,11 +24,29 @@ const ManageJobs = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [sortField, setSortField] = useState("title")
   const [sortDirection, setSortDirection] = useState("asc")
-  const [isLoading, setIsLoading] = useState(false)
   const itemsPerPage = 8;
 
-  // Sample job data
-  const [jobs, setJobs] = useState([])
+  const {
+    data,
+    isLoading,
+  } = useGetJobsEmployerQuery()
+
+  const [deleteJob] = useDeleteJobMutation();
+  const [closeJob] = useCloseJobMutation()
+
+  const jobs = useMemo(() => {
+    if (!data) return []
+
+    return data?.map(job => ({
+      id: job._id,
+      title: job.title,
+      company: job.company?.name || "—",
+      status: job.isClosed ? "Closed" : "Active",
+      applicants: job.applicationCount || 0,
+      datePosted: moment(job.createdAt).format("DD-MM-YYYY"),
+      logo: job.company?.companyLogo,
+    }))
+  }, [data])
 
   // Filter and sort jobs
   const filteredAndSortedJobs = useMemo(() => {
@@ -83,23 +100,20 @@ const ManageJobs = () => {
   // Toggle the status of a job
   const handleStatusChange = async (jobId) => {
     try {
-      await axiosInstance.patch(
-        API_PATHS.JOBS.TOGGLE_CLOSE(jobId)
-      );
-      getPostedJobs(true);
-    } catch (error) {
-      console.error("Error toggling job status", error)
+      await closeJob(jobId).unwrap();
+      toast.success("Job status updated")
+    } catch (err) {
+      toast.error(err?.data?.message || "Failed to update job")
     }
   }
 
   // Delete a specific job
   const handleDeleteJob = async (jobId) => {
     try {
-      await axiosInstance.delete(API_PATHS.JOBS.DELETE_JOB(jobId));
-      setJobs(jobs.filter((job) => job.id !== jobId))
-      toast.success("Job listing deleted successfully")
-    } catch (error) {
-      console.error("Error deleting job:", error)
+      await deleteJob(jobId).unwrap();
+      toast.success("Job deleted successfully")
+    } catch (err) {
+      toast.error(err?.data?.message || "Failed to delete job")
     }
   }
 
@@ -141,42 +155,6 @@ const ManageJobs = () => {
       </td>
     </tr>
   )
-
-  const getPostedJobs = async (disableLoader) => {
-    setIsLoading(!disableLoader)
-    try {
-      const response = await axiosInstance.get(
-        API_PATHS.JOBS.GET_JOBS_EMPLOYER
-      );
-
-      if (response.status === 200 && response.data?.length > 0) {
-        const formattedJobs = response?.data?.map((job) => ({
-          id: job._id,
-          title: job?.title,
-          company: job?.company?.name,
-          status: job?.isClosed ? "Closed" : "Active",
-          applicants: job?.applicationCount || 0,
-          dataPoated: moment(job?.createdAt).format("DD-MM-YYYY"),
-          logo: job?.company?.companyLogo
-        }));
-        setJobs(formattedJobs)
-      }
-    } catch (error) {
-      if (error.response) {
-        // Handle API specific errors
-        console.error(error.response.data.message)
-      } else {
-        console.error("Error posting job. Please try again.")
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    getPostedJobs();
-    return () => { };
-  }, [])
 
   return (
     <DashboardLayout activeMenu="manage-jobs">

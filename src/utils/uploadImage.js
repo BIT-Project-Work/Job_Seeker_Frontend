@@ -1,24 +1,24 @@
-import { API_PATHS } from "./apiPaths";
-import axiosInstance from "./axiosInstance";
+// import { API_PATHS } from "./apiPaths";
+// import axiosInstance from "./axiosInstance";
 
-const uploadImage = async (imageFile) => {
+// const uploadImage = async (imageFile) => {
 
-    const formData = new FormData();
-    // Append image file to form data
-    formData.append("file", imageFile);
+//     const formData = new FormData();
+//     // Append image file to form data
+//     formData.append("file", imageFile);
 
-    try {
-        const response = await axiosInstance.post(API_PATHS.IMAGE.UPLOAD_IMAGE, formData, {
-            headers: {
-                'Content-Type': "multipart/form-data"
-            }
-        })
+//     try {
+//         const response = await axiosInstance.post(API_PATHS.IMAGE.UPLOAD_IMAGE, formData, {
+//             headers: {
+//                 'Content-Type': "multipart/form-data"
+//             }
+//         })
 
-        return response.data;
-    } catch (error) {
-        console.error("Error uploading the image:", error)
-        throw error;
-    }
-};
+//         return response.data;
+//     } catch (error) {
+//         console.error("Error uploading the image:", error)
+//         throw error;
+//     }
+// };
 
-export default uploadImage;
+// export default uploadImage;

@@ -1,4 +1,4 @@
-import { Bookmark, Building, Building2, Calendar, MapPin } from "lucide-react"
+import { Bookmark, Building, Building2, Calendar, MapPin, Star } from "lucide-react"
 import moment from 'moment'
 import { useAuth } from "../../context/useAuth"
 import StatusBadge from "../StatusBadge"
@@ -42,6 +42,14 @@ const JobCard = ({ job, onClick, onToggleSave, onApply, saved, hideApply }) => {
                             <Building className="w-3.5 h-3.5" />
                             {job?.company?.companyName}
                         </p>
+                        {job?.isRecommended && (
+                            <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold leading-none text-blue-700">
+                                <Star className="h-3.5 w-3.5 shrink-0 fill-current" />
+                                <span className="leading-none">
+                                    {Math.round(job.recommendationScore * 100)}% Match
+                                </span>
+                            </div>
+                        )}
                     </div>
                 </div>
                 {user &&

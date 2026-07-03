@@ -4,9 +4,10 @@ import {
     Building2,
     Clock,
     Users,
+    ArrowLeft
 } from 'lucide-react'
 import { useAuth } from '../../context/useAuth'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import Navbar from '../../components/layout/Navbar'
 import moment from 'moment'
 import StatusBadge from '../../components/StatusBadge'
@@ -20,8 +21,10 @@ const JobDetails = () => {
 
     const { user } = useAuth();
 
+    const navigate = useNavigate();
+
     const { data: jobDetails, refetch } = useGetJobByIdQuery(
-        { jobId, userId: user?._id || "" }, // 👈 pass as object
+        { jobId, userId: user?._id || "" },
         { skip: !jobId }
     );
 
@@ -46,6 +49,19 @@ const JobDetails = () => {
             <Navbar />
 
             <div className="container mx-auto pt-24">
+
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-4">
+                    <div className="flex items-center gap-4 mb-4 sm:mb-0">
+                        <button
+                            className="group flex items-center space-x-2 px-3 py-2 text-sm font-medium text-gray-600 hover:text-white bg-white/50 hover:bg-linear-to-r hover:from-blue-500 hover:to-blue-600 border border-gray-200 hover:border-transparent rounded-xl transition-all duration-300 shadow-lg shadow-gray-100 hover:shadow-xl "
+                            onClick={() => navigate("/find-jobs")}
+                        >
+                            <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+                            <span>Back</span>
+                        </button>
+                    </div>
+                </div>
+
                 {/* Main Content card */}
                 {jobDetails && (
                     <div className="bg-white p-6 rounded-lg">

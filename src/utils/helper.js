@@ -34,6 +34,13 @@ export const validateAvatar = (file) => {
     return "";
 }
 
+export const ALLOWED_TYPES = [
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "application/pdf",
+];
+
 // export const getInitials = (name) => {
 //     return name
 //         .split(" ")

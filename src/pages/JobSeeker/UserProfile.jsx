@@ -6,6 +6,9 @@ import Navbar from "../../components/layout/Navbar"
 import { Link } from "react-router-dom"
 import { useDeleteResumeMutation, useUpdateProfileMutation } from "../../store/slices/userSlice"
 import { useUploadImage } from "../../utils/imageUpload"
+import SelectField from "../../components/Input/SelectField"
+import MultiSelectField from '../../components/Input/MultiSelectField'
+import { CATEGORIES, SKILLS } from "../../utils/data"
 
 const UserProfile = () => {
 
@@ -16,6 +19,10 @@ const UserProfile = () => {
     const [profileData, setProfileData] = useState({
         name: user?.name || "",
         email: user?.email || "",
+        preferredCategory: user?.preferredCategory || "",
+        preferredLocation: user?.preferredLocation || "",
+        experience: user?.experience || "",
+        skills: user?.skills || [],
         avatar: user?.avatar || null,
         resume: user?.resume || null,
     });
@@ -50,26 +57,32 @@ const UserProfile = () => {
 
             handleInputChange(type, imageUrl);
         } catch (error) {
-            toast.error("Image upload failed. Try again.");
+            toast.error(error?.data?.message || error?.message || "Image upload failed.");
             console.error("Image upload failed:", error);
         } finally {
             setUploading((prev) => ({ ...prev, [type]: false }));
         }
     };
 
-    const handleImageChange = (e, type) => {
+    const handleImageChange = async (e, type) => {
         const file = e.target.files[0];
 
         if (!file) return;
 
-        const previewUrl = URL.createObjectURL(file);
-        handleInputChange(type, previewUrl);
+        const previousImage = formData[type];
 
-        handleImageUpload(file, type);
+        const preview = URL.createObjectURL(file);
+        handleInputChange(type, preview);
 
-        e.target.value = "";
+        try {
+            await handleImageUpload(file, type);
+        } catch {
+            handleInputChange(type, previousImage);
+        } finally {
+            URL.revokeObjectURL(preview);
+            e.target.value = "";
+        }
     };
-
 
     const [updateProfile] = useUpdateProfileMutation();
 
@@ -121,7 +134,6 @@ const UserProfile = () => {
         }
     };
 
-
     useEffect(() => {
         if (!user) return;
 
@@ -130,6 +142,10 @@ const UserProfile = () => {
             return {
                 name: user.name || "",
                 email: user.email || "",
+                preferredCategory: user?.preferredCategory || "",
+                preferredLocation: user?.preferredLocation || "",
+                experience: user?.experience || "",
+                skills: user?.skills || [],
                 avatar: user.avatar || null,
                 resume: user.resume || null,
             };
@@ -140,11 +156,23 @@ const UserProfile = () => {
             return {
                 name: user.name || "",
                 email: user.email || "",
+                preferredCategory: user.preferredCategory || "",
+                preferredLocation: user.preferredLocation || "",
+                experience: user.experience || "",
+                skills: user.skills || [],
                 avatar: user.avatar || null,
                 resume: user.resume || null,
             };
         });
     }, [user]);
+
+    const avatarFileName = formData?.avatar
+        ? decodeURIComponent(formData.avatar.split("/").pop().split("?")[0])
+        : "";
+
+    const removeAvatar = () => {
+        handleInputChange("avatar", "");
+    };
 
     return (
         <div className="bg-linear-to-br from-blue-50 via-white to-purple-50">
@@ -160,7 +188,8 @@ const UserProfile = () => {
 
                         <div className="p-8">
                             <div className="space-y-6">
-                                <div className="flex items-center space-x-4">
+
+                                {/* <div className="flex items-center space-x-4">
                                     <div className="relative">
                                         <img
                                             src={formData?.avatar || DEFAULT_AVATAR}
@@ -184,30 +213,131 @@ const UserProfile = () => {
                                                 className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file-bg-blue-100 transition-colors"
                                             />
                                         </label>
+                                        {avatarFileName && (
+                                            <p className="mt-2 text-sm text-gray-500 truncate">
+                                                {avatarFileName}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div> */}
+
+                                <div className="flex items-center gap-4">
+                                    <div className="relative">
+                                        <img
+                                            src={formData?.avatar || DEFAULT_AVATAR}
+                                            alt="Avatar"
+                                            className="w-20 h-20 rounded-full object-cover border-4 border-gray-200"
+                                        />
+
+                                        {formData?.avatar && (
+                                            <button
+                                                type="button"
+                                                onClick={removeAvatar}
+                                                className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white text-sm flex items-center justify-center hover:bg-red-600"
+                                            >
+                                                ✕
+                                            </button>
+                                        )}
+
+                                        {uploading?.avatar && (
+                                            <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
+                                                <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div>
+                                        <input
+                                            type="file"
+                                            id="avatar-upload"
+                                            accept=".jpeg,.jpg,.png,.pdf"
+                                            className="hidden"
+                                            onChange={(e) => handleImageChange(e, "avatar")}
+                                        />
+                                        <p className="mt-2 mb-1 text-xs text-gray-500">
+                                            Allowed formats: .jpeg, .jpg, .png, .pdf
+                                        </p>
+
+                                        <label
+                                            htmlFor="avatar-upload"
+                                            className="inline-flex cursor-pointer rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+                                        >
+                                            Choose Image
+                                        </label>
+
+                                        <p className="mt-2 text-sm text-gray-500">
+                                            {avatarFileName || "No image selected"}
+                                        </p>
                                     </div>
                                 </div>
 
                                 {/* Name Input */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
-                                    <input
-                                        type="text"
-                                        value={formData.name}
-                                        onChange={(e) => handleInputChange("name", e.target.value)}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                        placeholder="Enter your full name"
-                                    />
-                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                                        <input
+                                            type="text"
+                                            value={formData.name}
+                                            onChange={(e) => handleInputChange("name", e.target.value)}
+                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                            placeholder="Enter your full name"
+                                        />
+                                    </div>
 
-                                {/* Email Read only */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-                                    <input
-                                        type="email"
-                                        value={formData.email}
-                                        disabled
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
+                                    {/* Email Read only */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                                        <input
+                                            type="email"
+                                            value={formData.email}
+                                            disabled
+                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
+                                        />
+                                    </div>
+
+                                    {/* Preferred Category */}
+                                    <SelectField
+                                        label="Preferred Category"
+                                        id="preferredCategory"
+                                        value={formData.preferredCategory}
+                                        onChange={(e) => handleInputChange("preferredCategory", e.target.value)}
+                                        options={CATEGORIES}
+                                        placeholder="Select a category"
                                     />
+
+                                    {/* Skills */}
+                                    <MultiSelectField
+                                        label="Skills"
+                                        id="skills"
+                                        value={formData.skills}
+                                        onChange={(value) => handleInputChange("skills", value)}
+                                        options={SKILLS}
+                                        placeholder="Select skills..."
+                                    />
+
+                                    {/* Experience */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Experience</label>
+                                        <input
+                                            type="number"
+                                            value={formData.experience}
+                                            onChange={(e) => handleInputChange("experience", e.target.value)}
+                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
+                                            placeholder="e.g. 1, 2"
+                                        />
+                                    </div>
+
+                                    {/* Preferred Location */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Preferred Location</label>
+                                        <input
+                                            type="text"
+                                            value={formData.preferredLocation}
+                                            onChange={(e) => handleInputChange("preferredLocation", e.target.value)}
+                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
+                                            placeholder="e.g. Kathmandu"
+                                        />
+                                    </div>
                                 </div>
 
                                 {/* Resume */}
@@ -241,7 +371,7 @@ const UserProfile = () => {
                                     <div>
                                         <label className="block">
                                             <span className="sr-only">
-                                                Choose File
+                                                Choose a Resume
                                             </span>
                                             <input
                                                 type="file"

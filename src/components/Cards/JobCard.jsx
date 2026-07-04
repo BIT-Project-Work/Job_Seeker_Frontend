@@ -17,7 +17,11 @@ const JobCard = ({ job, onClick, onToggleSave, onApply, saved, hideApply }) => {
 
     return (
         <div
-            className="bg-white rounded-2xl border border-gray-200 p-6 hover:shadow-xl hover:shadow-gray-200 transition-all duration-300 group relative overflow-hidden cursor-pointer"
+            className={`bg-white rounded-2xl p-6 transition-all duration-300
+    ${job.isRecommended
+                    ? "border-2 border-blue-500"
+                    : "border border-gray-200"
+                }`}
             onClick={onClick}
         >
             <div className="flex items-start justify-between mb-4">

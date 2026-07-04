@@ -131,6 +131,45 @@ const JobPostingPreview = ({ formData, setIsPreview }) => {
                                 </div>
                             </div>
 
+                            {/* Requirements (Skills + Experience) */}
+                            <div className="space-y-4">
+                                <h3 className="text-2xl font-bold text-gray-900 flex items-center space-x-3">
+                                    <div className="w-1 h-8 bg-linear-to-b from-purple-500 to-pink-600 rounded-full"></div>
+                                    <span className="text-lg">What We're Looking For</span>
+                                </h3>
+
+                                <div className="bg-linear-to-br from-purple-50 to-pink-50 border border-purple-100 rounded-xl p-6 space-y-4">
+
+                                    {/* Experience */}
+                                    <div className="text-gray-800">
+                                        <span className="font-semibold">Experience Required:</span>{" "}
+                                        <span className="text-purple-700 font-medium">
+                                            {formData?.experienceRequired}+ years
+                                        </span>
+                                    </div>
+
+                                    {/* Skills */}
+                                    <div>
+                                        <p className="font-semibold text-gray-800 mb-3">Required Skills:</p>
+
+                                        <div className="flex flex-wrap gap-2">
+                                            {formData?.skills?.length > 0 ? (
+                                                formData?.skills.map((skill, index) => (
+                                                    <span
+                                                        key={index}
+                                                        className="px-3 py-1 text-sm rounded-full bg-purple-100 text-purple-700 border border-purple-200"
+                                                    >
+                                                        {skill}
+                                                    </span>
+                                                ))
+                                            ) : (
+                                                <p className="text-sm text-gray-500">No skills specified</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             {/* Job Description */}
                             <div className="space-y-4">
                                 <h3 className="text-2xl font-bold text-gray-900 flex items-center space-x-3">
@@ -149,7 +188,7 @@ const JobPostingPreview = ({ formData, setIsPreview }) => {
                             </div>
 
                             {/* Requirements */}
-                            <div className="space-y-4">
+                            {/* <div className="space-y-4">
                                 <h3 className="text-2xl font-bold text-gray-900 flex items-center space-x-3">
                                     <div className="w-1 h-8 bg-linear-to-b from-purple-500 to-pink-600 rounded-full"></div>
                                     <span className="text-base md:text-lg">
@@ -161,7 +200,9 @@ const JobPostingPreview = ({ formData, setIsPreview }) => {
                                         {formData.requirements}
                                     </div>
                                 </div>
-                            </div>
+                            </div> */}
+
+
                         </div>
                     </div>
                 </div>

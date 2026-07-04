@@ -10,7 +10,7 @@ const TextareaField = ({
     helperText,
     required = false,
     disabled = false,
-    rows = 6,
+    rows = 4,
     ...props
 }) => {
     return (

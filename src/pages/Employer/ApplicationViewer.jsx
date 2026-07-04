@@ -7,7 +7,8 @@ import {
     Briefcase,
     Download,
     Eye,
-    ArrowLeft
+    ArrowLeft,
+    Star
 } from 'lucide-react'
 import { useLocation, useNavigate } from "react-router-dom"
 import moment from 'moment'
@@ -197,7 +198,18 @@ const ApplicationViewer = () => {
 
                                                         {/* Actions */}
                                                         <div className="flex items-center gap-3 mt-4 md:m-0">
+
+                                                            {application.recommendationPercentage != null && (
+                                                                <div className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
+                                                                    <Star className="h-3.5 w-3.5 shrink-0 fill-current" />
+                                                                    <span>
+                                                                        {Math.round(application?.recommendationPercentage)}% Match
+                                                                    </span>
+                                                                </div>
+                                                            )}
+
                                                             <StatusBadge status={application.status} />
+                                                            
                                                             <button
                                                                 onClick={() =>
                                                                     handleDownloadResume(

@@ -317,10 +317,13 @@ const ManageJobs = () => {
                               <div className="flex space-x-2">
                                 <button
                                   className="text-blue-600 hover:text-blue-800 p-2 rounded-lg hover:bg-blue-50 transition-colors duration-200 "
-                                  onClick={() =>
+                                  onClick={() => {
+                                    console.log("job.id:", job.id);
                                     navigate("/post-job", {
-                                      state: { jobId: job.id }
-                                    })}
+                                      state: { jobId: job?.id }
+                                    })
+                                  }
+                                  }
                                 >
                                   <Edit className="w-4 h-4" />
                                 </button>

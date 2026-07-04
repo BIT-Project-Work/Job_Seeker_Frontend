@@ -16,7 +16,7 @@ export const savedJobsSlice = apiSlice.injectEndpoints({
                 url: `/saved-jobs/${jobId}`,
                 method: "POST",
             }),
-            invalidatesTags: ["SavedJobs"],
+            invalidatesTags: ["SavedJobs", "Job"],
         }),
 
         // Unsave a job
@@ -25,7 +25,7 @@ export const savedJobsSlice = apiSlice.injectEndpoints({
                 url: `/saved-jobs/${jobId}`,
                 method: "DELETE",
             }),
-            invalidatesTags: ["SavedJobs"],
+            invalidatesTags: ["SavedJobs", "Job"],
         }),
 
     })

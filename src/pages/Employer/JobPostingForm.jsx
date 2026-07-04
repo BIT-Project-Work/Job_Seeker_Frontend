@@ -7,7 +7,8 @@ import {
     Briefcase,
     Users,
     Eye,
-    Send
+    Send,
+    CalendarClock
 } from 'lucide-react'
 import { useLocation, useNavigate } from "react-router-dom"
 import toast from "react-hot-toast"
@@ -18,6 +19,8 @@ import TextareaField from "../../components/Input/TextareaField"
 import JobPostingPreview from "../../components/Cards/JobPostingPreview"
 import { useCreateJobMutation, useGetJobByIdQuery, useUpdateJobMutation } from "../../store/slices/jobSlice"
 import { useAuth } from "../../context/useAuth"
+import MultiSelectField from "../../components/Input/MultiSelectField"
+import { SKILLS } from "../../utils/data"
 
 const JobPostingForm = () => {
 
@@ -30,6 +33,8 @@ const JobPostingForm = () => {
         jobTitle: "",
         location: "",
         category: "",
+        skills: [],
+        experienceRequired: "",
         jobType: "",
         description: "",
         requirements: "",
@@ -38,7 +43,6 @@ const JobPostingForm = () => {
     });
 
     const [errors, setErrors] = useState({})
-    // const [isSubmitting, setIsSubmitting] = useState(false)
     const [isPreview, setIsPreview] = useState(false)
 
     const { data, isLoading } = useGetJobByIdQuery({ jobId, userId: user?._id || "" }, // 👈 pass as object
@@ -57,11 +61,13 @@ const JobPostingForm = () => {
                 jobTitle: job.title,
                 location: job.location,
                 category: job.category,
+                experienceRequired: String(job.experienceRequired),
+                skills: job.skills,
                 jobType: job.type,
                 description: job.description,
-                requirements: job.requirements,
                 salaryMin: job.salaryMin,
                 salaryMax: job.salaryMax
+                // requirements: job.requirements,
             })
         }
     }, [data])
@@ -93,16 +99,23 @@ const JobPostingForm = () => {
         const jobPayload = {
             title: formData.jobTitle,
             description: formData.description,
-            requirements: formData.requirements,
             location: formData.location,
             category: formData.category,
+            experienceRequired: Number(formData.experienceRequired),
+            skills: formData.skills,
             type: formData.jobType,
             salaryMin: formData.salaryMin,
             salaryMax: formData.salaryMax,
+            // requirements: formData.requirements,
         };
 
         try {
-            const response = jobId ? await updateJob(jobId, jobPayload).unwrap()
+
+            const response = jobId
+                ? await updateJob({
+                    id: jobId,
+                    data: jobPayload,
+                }).unwrap()
                 : await createJob(jobPayload).unwrap();
 
             toast.success(jobId ? "Job Updated Successfully!" : "Job Posted Successfully!")
@@ -114,6 +127,7 @@ const JobPostingForm = () => {
             }
         }
     };
+
 
     // Form validation helper
     const validateForm = (formData) => {
@@ -134,8 +148,20 @@ const JobPostingForm = () => {
         if (!formData.description.trim()) {
             errors.description = "Job description is required"
         }
-        if (!formData.requirements.trim()) {
-            errors.requirements = "Job requirements is required"
+        const experience = Number(formData.experienceRequired);
+
+        if (
+            formData.experienceRequired === "" ||
+            Number.isNaN(experience) ||
+            experience < 1
+        ) {
+            errors.experienceRequired = "Experience must be at least 1 year";
+        }
+        if (!formData.skills?.length) {
+            errors.skills = "Skills are required";
+        }
+        if (!formData.description.trim()) {
+            errors.description = "Job description is required"
         }
 
         if (!formData.salaryMin || !formData.salaryMax) {
@@ -187,33 +213,28 @@ const JobPostingForm = () => {
                         </div>
 
                         <div className="space-y-6">
-                            {/* Job Title */}
-                            <InputField
-                                label="Job Title"
-                                id="jobTitle"
-                                placeholder="e.g., Senior Frontend Developer"
-                                value={formData.jobTitle}
-                                onChange={(e) => handleInputChange("jobTitle", e.target.value)}
-                                error={errors.jobTitle}
-                                required
-                                icon={Briefcase}
-                            />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <InputField
+                                    label="Job Title"
+                                    id="jobTitle"
+                                    placeholder="e.g., Senior Frontend Developer"
+                                    value={formData.jobTitle}
+                                    onChange={(e) => handleInputChange("jobTitle", e.target.value)}
+                                    error={errors.jobTitle}
+                                    required
+                                    icon={Briefcase}
+                                />
 
-                            {/* Location & Remote */}
-                            <div className="space-y-4">
-                                <div className="flex flex-col sm:flex-row sm:items-end sm:space-x-4 space-y-4 sm:space-y-8">
-                                    <div className="flex-1">
-                                        <InputField
-                                            label="Location"
-                                            id="location"
-                                            placeholder="e.g., New York, NY"
-                                            value={formData.location}
-                                            onChange={(e) => handleInputChange("location", e.target.value)}
-                                            error={errors.location}
-                                            icon={MapPin}
-                                        />
-                                    </div>
-                                </div>
+                                <InputField
+                                    label="Location"
+                                    id="location"
+                                    placeholder="e.g., New York, NY"
+                                    value={formData.location}
+                                    onChange={(e) => handleInputChange("location", e.target.value)}
+                                    error={errors.location}
+                                    icon={MapPin}
+                                    required
+                                />
                             </div>
 
                             {/* Category & Job Types */}
@@ -242,6 +263,32 @@ const JobPostingForm = () => {
                                 />
                             </div>
 
+                            {/* Skills and Experience */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <MultiSelectField
+                                    label="Skills"
+                                    id="skills"
+                                    value={formData.skills}
+                                    onChange={(value) => handleInputChange("skills", value)}
+                                    options={SKILLS}
+                                    placeholder="Select skills..."
+                                    error={errors.skills}
+                                    required
+                                // icon={Briefcase}
+                                />
+                                <InputField
+                                    label="Experience Required"
+                                    id="experienceRequired"
+                                    placeholder="e.g. 1 yr, 2yrs"
+                                    type="number"
+                                    value={formData.experienceRequired}
+                                    onChange={(e) => handleInputChange("experienceRequired", e.target.value)}
+                                    error={errors.experienceRequired}
+                                    icon={CalendarClock}
+                                    required
+                                />
+                            </div>
+
                             {/* Description */}
                             <TextareaField
                                 label="Job Description"
@@ -255,7 +302,7 @@ const JobPostingForm = () => {
                             />
 
                             {/* Requirements */}
-                            <TextareaField
+                            {/* <TextareaField
                                 label="Requirements"
                                 id="requirements"
                                 placeholder="List key qualifications and skills..."
@@ -264,7 +311,7 @@ const JobPostingForm = () => {
                                 error={errors.requirements}
                                 helperText="Include required skills, experience level, education, and any preferred qualifications"
                                 required
-                            />
+                            /> */}
 
                             {/* Salary Range */}
                             <div className="space-y-2">

@@ -52,12 +52,17 @@ export const jobSlice = apiSlice.injectEndpoints({
 
         // ✏️ Update job
         updateJob: builder.mutation({
-            query: ({ id, data }) => ({
-                url: `/jobs/${id}`,
-                method: "PATCH",
-                body: data,
-            }),
-            invalidatesTags: ["Job", "Analytics"],
+            query: ({ id, data }) => {
+                // console.log("Updating job...");
+                // console.log("ID:", id);
+                // console.log("Data:", data);
+
+                return {
+                    url: `/jobs/${id}`,
+                    method: "PATCH",
+                    body: data,
+                }},
+                    invalidatesTags: ["Job", "Analytics"],
         }),
 
         // ✏️ Update job

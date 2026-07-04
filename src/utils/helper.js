@@ -26,9 +26,9 @@ export const validateAvatar = (file) => {
         return "Avatar must be a JPG, JPEG or PNG file"
     }
 
-    const maxSize = 5 * 1024 * 1024; // 5MB
+    const maxSize = 2 * 1024 * 1024; // 5MB
     if (file.size > maxSize) {
-        return "Avatar must be less than 5MB"
+        return "Avatar must be less than 2MB"
     }
 
     return "";
@@ -40,6 +40,17 @@ export const ALLOWED_TYPES = [
     "image/png",
     "application/pdf",
 ];
+
+export const ALLOWED_RESUME_TYPES = [
+    // "image/jpeg",
+    // "image/jpg",
+    // "image/png",
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+];
+
+export const MAX_RESUME_SIZE = 5 * 1024 * 1024; // 5MB
 
 // export const getInitials = (name) => {
 //     return name

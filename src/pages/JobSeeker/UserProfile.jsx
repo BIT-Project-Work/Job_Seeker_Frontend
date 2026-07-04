@@ -9,6 +9,7 @@ import { useUploadImage } from "../../utils/imageUpload"
 import SelectField from "../../components/Input/SelectField"
 import MultiSelectField from '../../components/Input/MultiSelectField'
 import { CATEGORIES, SKILLS } from "../../utils/data"
+import { ALLOWED_RESUME_TYPES, MAX_RESUME_SIZE } from "../../utils/helper"
 
 const UserProfile = () => {
 
@@ -40,6 +41,7 @@ const UserProfile = () => {
 
     const { uploadImage } = useUploadImage();
 
+    //! Avatar Handler 
     const handleImageUpload = async (file, type) => {
         setUploading((prev) => ({ ...prev, [type]: true }));
 
@@ -106,6 +108,79 @@ const UserProfile = () => {
     const handleCancel = () => {
         setFormData({ ...profileData })
     }
+
+    //! Resume Handler
+    const handleResumeChange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // validation: type
+        if (!ALLOWED_RESUME_TYPES.includes(file.type)) {
+            toast.error("Only PDF, DOC, DOCX files are allowed");
+            e.target.value = "";
+            return;
+        }
+
+        // validation: size
+        if (file.size > MAX_RESUME_SIZE) {
+            toast.error("File size must be less than 2MB");
+            e.target.value = "";
+            return;
+        }
+
+        try {
+            setUploading((prev) => ({ ...prev, resume: true }));
+
+            const res = await uploadImage(file);
+
+            const url =
+                res?.imageUrl ||
+                res?.data?.imageUrl ||
+                "";
+
+            if (!url) throw new Error("Upload failed");
+
+            handleInputChange("resume", url);
+
+            toast.success("Resume uploaded successfully");
+        } catch (err) {
+            toast.error(
+                err?.data?.message ||
+                err?.message ||
+                "Resume upload failed"
+            );
+        } finally {
+            setUploading((prev) => ({ ...prev, resume: false }));
+            e.target.value = "";
+        }
+    };
+
+    const handleResumeDrop = async (e) => {
+        e.preventDefault();
+
+        const file = e.dataTransfer.files[0];
+        if (!file) return;
+
+        await handleResumeFile(file);
+    };
+
+    const handleResumeFile = async (file) => {
+        if (!ALLOWED_RESUME_TYPES.includes(file.type)) {
+            toast.error("Invalid file type");
+            return;
+        }
+
+        if (file.size > MAX_RESUME_SIZE) {
+            toast.error("Max size is 5MB");
+            return;
+        }
+
+        const res = await uploadImage(file);
+
+        const url = res?.imageUrl || res?.data?.imageUrl;
+
+        handleInputChange("resume", url);
+    };
 
     const [deleteResume] = useDeleteResumeMutation()
 
@@ -221,6 +296,7 @@ const UserProfile = () => {
                                     </div>
                                 </div> */}
 
+                                {/* //! Avatar Upload */}
                                 <div className="flex items-center gap-4">
                                     <div className="relative">
                                         <img
@@ -341,7 +417,7 @@ const UserProfile = () => {
                                 </div>
 
                                 {/* Resume */}
-                                {user?.resume ? (
+                                {/* {user?.resume ? (
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
                                             Resume
@@ -378,6 +454,45 @@ const UserProfile = () => {
                                                 onChange={(e) => handleImageChange(e, "resume")}
                                                 className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-colors"
                                             />
+                                        </label>
+                                    </div>
+                                )} */}
+
+                                {formData.resume ? (
+                                    <div className="flex items-center gap-2">
+                                        <a
+                                            href={formData.resume}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="text-blue-600 underline"
+                                        >
+                                            View Resume
+                                        </a>
+
+                                        <span className="text-sm text-gray-500">
+                                            {formData.resume.split("/").pop()}
+                                        </span>
+
+                                        <button onClick={DeleteResume}>
+                                            <Trash2 className="h-5 w-5 text-red-500" />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div
+                                        onDrop={handleResumeDrop}
+                                        onDragOver={(e) => e.preventDefault()}
+                                        className="border-2 border-dashed p-4 rounded-lg text-center cursor-pointer"
+                                    >
+                                        <input
+                                            type="file"
+                                            accept=".pdf,.doc,.docx"
+                                            onChange={handleResumeChange}
+                                            className="hidden"
+                                            id="resumeUpload"
+                                        />
+
+                                        <label htmlFor="resumeUpload" className="cursor-pointer text-blue-600">
+                                            Click or Drag & Drop Resume (Max 2MB)
                                         </label>
                                     </div>
                                 )}

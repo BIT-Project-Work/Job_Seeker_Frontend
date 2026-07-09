@@ -1,6 +1,55 @@
 import { MapPin, Search } from 'lucide-react'
+import { useEffect, useState } from "react";
 
 const SearchHeader = ({ filters, handleFilterChange }) => {
+
+    const [keyword, setKeyword] = useState(
+        filters.keyword,
+    );
+
+    const [location, setLocation] = useState(
+        filters.location,
+    );
+
+    // Sync local state when URL changes
+    useEffect(() => {
+        setKeyword(filters.keyword);
+    }, [filters.keyword]);
+
+    useEffect(() => {
+        setLocation(filters.location);
+    }, [filters.location]);
+
+    // Debounce keyword search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (keyword !== filters.keyword) {
+                handleFilterChange(
+                    "keyword",
+                    keyword,
+                );
+            }
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [keyword]);
+
+    // Debounce location search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (
+                location !== filters.location
+            ) {
+                handleFilterChange(
+                    "location",
+                    location,
+                );
+            }
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [location]);
+
     return (
         <div className='bg-white/80 backdrop-blue-xl rounded-2xl shadow-xl shadow-gray-200 border border-white/20 p-4 lg:p-8 mb-6 lg:mb-8'>
             <div className="flex flex-col gap-4 lg:gap-6">
@@ -20,8 +69,12 @@ const SearchHeader = ({ filters, handleFilterChange }) => {
                             type="text"
                             placeholder='Job title, company or keywords'
                             className="w-full pl-12 pr-4 py-2 lg:py-2.5 border border-gray-200 rounded-xl lg:rounded-xl outline-0 text-base bg-white/50 backdrop-blur-sm"
-                            value={filters.keyword}
-                            onChange={(e) => handleFilterChange("keyword", e.target.value)}
+                            value={keyword}
+                            onChange={(e) =>
+                                setKeyword(
+                                    e.target.value,
+                                )
+                            }
                         />
                     </div>
 
@@ -31,8 +84,12 @@ const SearchHeader = ({ filters, handleFilterChange }) => {
                             type="text"
                             className="w-full pl-12 pr-4 py-2 lg:py-2.5 border border-gray-200 rounded-xl lg:rounded-xl outline-0 text-base bg-white/50 backdrop-blur-sm"
                             placeholder='Location'
-                            value={filters.location}
-                            onChange={(e) => handleFilterChange("location", e.target.value)}
+                            value={location}
+                            onChange={(e) =>
+                                setLocation(
+                                    e.target.value,
+                                )
+                            }
                         />
                     </div>
 

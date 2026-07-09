@@ -13,11 +13,55 @@ export const jobSlice = apiSlice.injectEndpoints({
         }),
 
         // 👥 Get all jobs
+        // getJobsWithFilters: builder.query({
+        //     query: (filters) => ({
+        //         url: "/jobs",
+        //         params: filters,
+        //     }),
+        //     providesTags: ["Job"],
+        // }),
+
         getJobsWithFilters: builder.query({
-            query: (filters) => ({
+            query: ({
+                page = 1,
+                limit = 10,
+                ...params
+            }) => ({
                 url: "/jobs",
-                params: filters,
+                params: {
+                    ...params,
+                    page,
+                    limit,
+                },
             }),
+
+            serializeQueryArgs: ({ endpointName, queryArgs }) => {
+                const { page, ...rest } = queryArgs;
+                return {
+                    endpointName,
+                    ...rest,
+                };
+            },
+
+            merge: (currentCache, newItems, { arg }) => {
+                if (arg.page === 1) {
+                    currentCache.jobs = newItems.jobs;
+                } else {
+                    currentCache.jobs.push(
+                        ...newItems.jobs,
+                    );
+                }
+
+                currentCache.pagination =
+                    newItems.pagination;
+            },
+
+            forceRefetch({ currentArg, previousArg }) {
+                return (
+                    currentArg?.page !==
+                    previousArg?.page
+                );
+            },
             providesTags: ["Job"],
         }),
 
@@ -61,8 +105,9 @@ export const jobSlice = apiSlice.injectEndpoints({
                     url: `/jobs/${id}`,
                     method: "PATCH",
                     body: data,
-                }},
-                    invalidatesTags: ["Job", "Analytics"],
+                }
+            },
+            invalidatesTags: ["Job", "Analytics"],
         }),
 
         // ✏️ Update job

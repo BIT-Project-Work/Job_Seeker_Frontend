@@ -5,7 +5,7 @@ import toast from "react-hot-toast"
 import Navbar from "../../components/layout/Navbar"
 import { Link } from "react-router-dom"
 import { useDeleteResumeMutation, useUpdateProfileMutation } from "../../store/slices/userSlice"
-import { useUploadImage } from "../../utils/imageUpload"
+import { useFileUpload } from "../../utils/imageUpload"
 import SelectField from "../../components/Input/SelectField"
 import MultiSelectField from '../../components/Input/MultiSelectField'
 import { CATEGORIES, SKILLS } from "../../utils/data"
@@ -24,12 +24,16 @@ const UserProfile = () => {
         preferredLocation: user?.preferredLocation || "",
         experience: user?.experience || "",
         skills: user?.skills || [],
+
         avatar: user?.avatar || null,
+        avatarPublicId: user?.avatarPublicId || null,
+
         resume: user?.resume || null,
+        resumePublicId: user?.resumePublicId || "",
     });
 
-    const [formData, setFormData] = useState({ ...profileData })
-    const [uploading, setUploading] = useState({ avatar: false, logo: false })
+    const [formData, setFormData] = useState(profileData);
+    const [uploading, setUploading] = useState({ avatar: false, resume: false })
     const [saving, setSaving] = useState(false);
 
     const handleInputChange = (field, value) => {
@@ -39,50 +43,163 @@ const UserProfile = () => {
         }))
     }
 
-    const { uploadImage } = useUploadImage();
+    const { uploadFile } = useFileUpload();
 
-    //! Avatar Handler 
-    const handleImageUpload = async (file, type) => {
-        setUploading((prev) => ({ ...prev, [type]: true }));
+    //! Avatar Upload
+    const handleAvatarUpload = async (file) => {
+        setUploading((prev) => ({
+            ...prev,
+            avatar: true,
+        }));
 
         try {
-            const res = await uploadImage(file);
+            const res = await uploadFile("avatar", file);
 
-            const imageUrl =
-                res?.imageUrl ||
-                res?.data?.imageUrl ||
-                "";
+            setFormData((prev) => ({
+                ...prev,
+                avatar: res.url,
+                avatarPublicId: res.publicId,
+            }));
 
-            if (!imageUrl) {
-                throw new Error("Image URL not returned");
-            }
-
-            handleInputChange(type, imageUrl);
+            toast.success("Avatar uploaded successfully");
         } catch (error) {
-            toast.error(error?.data?.message || error?.message || "Image upload failed.");
-            console.error("Image upload failed:", error);
+            toast.error(error?.data?.message || "Avatar upload failed");
+            throw error;
         } finally {
-            setUploading((prev) => ({ ...prev, [type]: false }));
+            setUploading((prev) => ({
+                ...prev,
+                avatar: false,
+            }));
         }
     };
 
-    const handleImageChange = async (e, type) => {
-        const file = e.target.files[0];
+    //! Avatar Change
+    const handleAvatarChange = async (e) => {
+        const file = e.target.files?.[0];
 
         if (!file) return;
 
-        const previousImage = formData[type];
+        if (!["image/jpeg", "image/jpg", "image/png"].includes(file.type)) {
+            toast.error("Only JPG and PNG images are allowed");
+            e.target.value = "";
+            return;
+        }
 
+        const oldAvatar = formData.avatar;
         const preview = URL.createObjectURL(file);
-        handleInputChange(type, preview);
+
+        setFormData((prev) => ({
+            ...prev,
+            avatar: preview,
+        }));
 
         try {
-            await handleImageUpload(file, type);
+            await handleAvatarUpload(file);
         } catch {
-            handleInputChange(type, previousImage);
+            setFormData((prev) => ({
+                ...prev,
+                avatar: oldAvatar,
+            }));
         } finally {
             URL.revokeObjectURL(preview);
             e.target.value = "";
+        }
+    };
+
+    //! Resume Upload
+    const handleResumeUpload = async (file) => {
+        setUploading((prev) => ({
+            ...prev,
+            resume: true,
+        }));
+
+        try {
+            const res = await uploadFile("resume", file);
+
+            setFormData((prev) => ({
+                ...prev,
+                resume: res.url,
+                resumePublicId: res.publicId,
+            }));
+
+            toast.success("Resume uploaded successfully");
+        } catch (error) {
+            toast.error(error?.data?.message || "Resume upload failed");
+            throw error;
+        } finally {
+            setUploading((prev) => ({
+                ...prev,
+                resume: false,
+            }));
+        }
+    };
+
+    //! Resume Change
+    const handleResumeChange = async (e) => {
+        const file = e.target.files?.[0];
+
+        if (!file) return;
+
+        if (!ALLOWED_RESUME_TYPES.includes(file.type)) {
+            toast.error(
+                "Only PDF, DOC and DOCX files are allowed"
+            );
+
+            e.target.value = "";
+            return;
+        }
+
+        if (file.size > MAX_RESUME_SIZE) {
+            toast.error(
+                "File size must be less than 5MB"
+            );
+
+            e.target.value = "";
+            return;
+        }
+
+        try {
+            await handleResumeUpload(file);
+        } finally {
+            e.target.value = "";
+        }
+    };
+
+    //! Handle Resume Drop
+    const handleResumeDrop = async (e) => {
+        e.preventDefault();
+
+        const file = e.dataTransfer.files?.[0];
+
+        if (!file) return;
+
+        await handleResumeUpload(file);
+    };
+
+    //! Handle Delete Resume
+    const [deleteResume] = useDeleteResumeMutation()
+    const handleDeleteResume = async () => {
+        try {
+            await deleteResume().unwrap();
+
+            toast.success("Resume deleted successfully");
+
+            setProfileData(prev => ({
+                ...prev,
+                resume: "",
+                resumePublicId: "",
+            }));
+
+            setFormData(prev => ({
+                ...prev,
+                resume: "",
+                resumePublicId: "",
+            }));
+        } catch (error) {
+            toast.error(
+                error?.data?.message ||
+                "Failed to delete resume"
+            );
         }
     };
 
@@ -93,11 +210,13 @@ const UserProfile = () => {
 
         try {
             const res = await updateProfile(formData).unwrap();
+            setProfileData(formData);
+            updateUser?.({
+                ...user,
+                ...formData,
+            });
 
-            toast.success(res?.message || "Profile Details Updated Successfully!!");
-            setProfileData({ ...formData })
-            setFormData(formData);
-            // updateUser(formData);
+            toast.success("Profile updated successfully");
         } catch (error) {
             toast.error(error?.data?.message || "Update failed");
         } finally {
@@ -106,148 +225,42 @@ const UserProfile = () => {
     }
 
     const handleCancel = () => {
-        setFormData({ ...profileData })
-    }
-
-    //! Resume Handler
-    const handleResumeChange = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        // validation: type
-        if (!ALLOWED_RESUME_TYPES.includes(file.type)) {
-            toast.error("Only PDF, DOC, DOCX files are allowed");
-            e.target.value = "";
-            return;
-        }
-
-        // validation: size
-        if (file.size > MAX_RESUME_SIZE) {
-            toast.error("File size must be less than 2MB");
-            e.target.value = "";
-            return;
-        }
-
-        try {
-            setUploading((prev) => ({ ...prev, resume: true }));
-
-            const res = await uploadImage(file);
-
-            const url =
-                res?.imageUrl ||
-                res?.data?.imageUrl ||
-                "";
-
-            if (!url) throw new Error("Upload failed");
-
-            handleInputChange("resume", url);
-
-            toast.success("Resume uploaded successfully");
-        } catch (err) {
-            toast.error(
-                err?.data?.message ||
-                err?.message ||
-                "Resume upload failed"
-            );
-        } finally {
-            setUploading((prev) => ({ ...prev, resume: false }));
-            e.target.value = "";
-        }
+        setFormData(profileData);
     };
 
-    const handleResumeDrop = async (e) => {
-        e.preventDefault();
-
-        const file = e.dataTransfer.files[0];
-        if (!file) return;
-
-        await handleResumeFile(file);
-    };
-
-    const handleResumeFile = async (file) => {
-        if (!ALLOWED_RESUME_TYPES.includes(file.type)) {
-            toast.error("Invalid file type");
-            return;
-        }
-
-        if (file.size > MAX_RESUME_SIZE) {
-            toast.error("Max size is 5MB");
-            return;
-        }
-
-        const res = await uploadImage(file);
-
-        const url = res?.imageUrl || res?.data?.imageUrl;
-
-        handleInputChange("resume", url);
-    };
-
-    const [deleteResume] = useDeleteResumeMutation()
-
-    const DeleteResume = async () => {
-        setSaving(true);
-
-        console.log("Deleting resume:", {
-            user: user?.resume,
-            profileData: profileData.resume,
-            formData: formData.resume,
-        });
-        try {
-            await deleteResume({
-                resumeUrl: profileData.resume
-            }).unwrap();
-
-            toast.success("Resume Deleted Successfully!");
-
-            setProfileData((prev) => ({ ...prev, resume: "" }));
-            setFormData((prev) => ({ ...prev, resume: "" }));
-
-        } catch (error) {
-            toast.error(error?.data?.message || "Profile Update failed");
-        } finally {
-            setSaving(false);
-        }
+    const removeAvatar = () => {
+        setFormData(prev => ({
+            ...prev,
+            avatar: "",
+            avatarPublicId: "",
+        }));
     };
 
     useEffect(() => {
         if (!user) return;
 
-        setProfileData((prev) => {
-            if (prev.email) return prev; // already initialized
-            return {
-                name: user.name || "",
-                email: user.email || "",
-                preferredCategory: user?.preferredCategory || "",
-                preferredLocation: user?.preferredLocation || "",
-                experience: user?.experience || "",
-                skills: user?.skills || [],
-                avatar: user.avatar || null,
-                resume: user.resume || null,
-            };
-        });
+        const data = {
+            name: user.name || "",
+            email: user.email || "",
+            preferredCategory: user.preferredCategory || "",
+            preferredLocation: user.preferredLocation || "",
+            experience: user.experience || "",
+            skills: user.skills || [],
+            avatar: user.avatar || "",
+            avatarPublicId: user.avatarPublicId || "",
+            resume: user.resume || "",
+            resumePublicId: user.resumePublicId || "",
+        };
 
-        setFormData((prev) => {
-            if (prev.email) return prev;
-            return {
-                name: user.name || "",
-                email: user.email || "",
-                preferredCategory: user.preferredCategory || "",
-                preferredLocation: user.preferredLocation || "",
-                experience: user.experience || "",
-                skills: user.skills || [],
-                avatar: user.avatar || null,
-                resume: user.resume || null,
-            };
-        });
+        setProfileData(data);
+        setFormData(data);
     }, [user]);
 
     const avatarFileName = formData?.avatar
         ? decodeURIComponent(formData.avatar.split("/").pop().split("?")[0])
         : "";
 
-    const removeAvatar = () => {
-        handleInputChange("avatar", "");
-    };
+    console.log(formData)
 
     return (
         <div className="bg-linear-to-br from-blue-50 via-white to-purple-50">
@@ -263,38 +276,6 @@ const UserProfile = () => {
 
                         <div className="p-8">
                             <div className="space-y-6">
-
-                                {/* <div className="flex items-center space-x-4">
-                                    <div className="relative">
-                                        <img
-                                            src={formData?.avatar || DEFAULT_AVATAR}
-                                            alt="Avatar"
-                                            className="w-20 h-20 rounded-full object-cover border-4 border-gray-200"
-                                        />
-                                        {uploading?.avatar && (
-                                            <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center">
-                                                <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div>
-                                        <label className="block">
-                                            <span className="sr-only">Choose avatar</span>
-                                            <input
-                                                type="file"
-                                                accept="image/*"
-                                                onChange={(e) => handleImageChange(e, "avatar")}
-                                                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file-bg-blue-100 transition-colors"
-                                            />
-                                        </label>
-                                        {avatarFileName && (
-                                            <p className="mt-2 text-sm text-gray-500 truncate">
-                                                {avatarFileName}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div> */}
 
                                 {/* //! Avatar Upload */}
                                 <div className="flex items-center gap-4">
@@ -326,9 +307,9 @@ const UserProfile = () => {
                                         <input
                                             type="file"
                                             id="avatar-upload"
-                                            accept=".jpeg,.jpg,.png,.pdf"
+                                            accept="image/jpeg,image/jpg,image/png"
                                             className="hidden"
-                                            onChange={(e) => handleImageChange(e, "avatar")}
+                                            onChange={handleAvatarChange}
                                         />
                                         <p className="mt-2 mb-1 text-xs text-gray-500">
                                             Allowed formats: .jpeg, .jpg, .png, .pdf
@@ -415,49 +396,6 @@ const UserProfile = () => {
                                         />
                                     </div>
                                 </div>
-
-                                {/* Resume */}
-                                {/* {user?.resume ? (
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Resume
-                                        </label>
-
-                                        <div className="flex items-center gap-2">
-                                            <p className="text-sm text-gray-600">
-                                                Link:{" "}
-                                                <Link
-                                                    to={user?.resume}
-                                                    className="text-blue-500 underline cursor-pointer"
-                                                    target="_blank"
-                                                >
-                                                    {user?.resume}
-                                                </Link>
-                                            </p>
-
-                                            <button
-                                                className="cursor-pointer"
-                                                onClick={DeleteResume}
-                                            >
-                                                <Trash2 className="h-5 w-5 text-red-500" />
-                                            </button>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div>
-                                        <label className="block">
-                                            <span className="sr-only">
-                                                Choose a Resume
-                                            </span>
-                                            <input
-                                                type="file"
-                                                onChange={(e) => handleImageChange(e, "resume")}
-                                                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-colors"
-                                            />
-                                        </label>
-                                    </div>
-                                )} */}
-
                                 {formData.resume ? (
                                     <div className="flex items-center gap-2">
                                         <a
@@ -473,7 +411,7 @@ const UserProfile = () => {
                                             {formData.resume.split("/").pop()}
                                         </span>
 
-                                        <button onClick={DeleteResume}>
+                                        <button type="button" onClick={handleDeleteResume}>
                                             <Trash2 className="h-5 w-5 text-red-500" />
                                         </button>
                                     </div>
@@ -511,7 +449,7 @@ const UserProfile = () => {
                                 <button
                                     className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
                                     onClick={handleSave}
-                                    disabled={saving || uploading.avatar || uploading.logo}
+                                    disabled={saving || uploading.avatar || uploading.resume}
                                 >
                                     {saving ? (
                                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin">

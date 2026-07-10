@@ -1,7 +1,7 @@
-import { useState } from 'react'
-import { Search, Filter, Grid, List, X } from 'lucide-react'
+import { useState, useEffect, useRef, useMemo } from 'react'
+import { Search, Filter, Grid, List, X, LoaderCircle } from 'lucide-react'
 import LoadingSpinner from '../../components/LoadingSpinner'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { useAuth } from '../../context/useAuth'
 import FilterContent from './components/FilterContent'
@@ -10,78 +10,120 @@ import Navbar from '../../components/layout/Navbar'
 import JobCard from '../../components/Cards/JobCard'
 import { useSaveJobMutation, useUnSaveJobMutation } from '../../store/slices/savedJobSlice'
 import { useApplyToJobMutation } from '../../store/slices/applicationSlice'
-import { useGetJobsWithFiltersQuery } from '../../store/slices/jobSlice'
+import { useGetJobsWithFiltersInfiniteQuery } from '../../store/slices/jobSlice'
+import { slugify } from '../../utils/helper'
 
 const JobSeekerDashboard = () => {
 
     const { user } = useAuth();
+    const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
 
-    // const [jobs, setJobs] = useState([])
     const [viewMode, setViewMode] = useState("grid")
     const [showMobileFilters, setShowMobileFilters] = useState(false)
-    const [, setError] = useState(null);
+    // const [, setError] = useState(null);
 
-    const navigate = useNavigate();
-
-    // Filter Status
-    const [filters, setFilters] = useState({
-        keyword: "",
-        location: "",
-        category: "",
-        type: "",
-        minSalary: "",
-        maxSalary: ""
-    });
-
-    // Sidebar collapse states
     const [expandedSections, setExpandedSections] = useState({
         jobType: true,
         salary: true,
-        categories: true
+        categories: true,
     });
 
-    const { data, isLoading } =
-        useGetJobsWithFiltersQuery(
-            {
-                keyword: filters.keyword,
-                location: filters.location,
-                minSalary: filters.minSalary,
-                maxSalary: filters.maxSalary,
-                category: filters.category,
-                type: filters.type,
-                ...(user?._id && { userId: user._id }),
-            },
-            // {
-            //     skip: !user, // optional
-            // }
+    const filters = {
+        keyword: searchParams.get("keyword") ?? "",
+        location: searchParams.get("location") ?? "",
+        category: searchParams.get("category") ?? "",
+        type: searchParams.get("type") ?? "",
+        minSalary: searchParams.get("minSalary") ?? "",
+        maxSalary: searchParams.get("maxSalary") ?? "",
+    };
+
+    // const page = Number(searchParams.get("page") ?? 1);
+
+    const {
+        data,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+        isLoading,
+    } = useGetJobsWithFiltersInfiniteQuery({
+        ...filters,
+        ...(user?._id && {
+            userId: user._id,
+        }),
+    });
+
+    const jobs = useMemo(() => {
+        const map = new Map();
+
+        data?.pages.forEach(page => {
+            page.jobs.forEach(job => {
+                map.set(job._id, job);
+            });
+        });
+
+        return [...map.values()];
+    }, [data]);
+
+    const handleFilterChange = (key, value) => {
+        const params = new URLSearchParams(searchParams);
+
+        if (!value) {
+            params.delete(key);
+        } else {
+            params.set(key, value);
+        }
+
+        params.set("page", "1");
+
+        setSearchParams(params);
+    };
+
+    const clearAllFilters = () => {
+        setSearchParams({});
+    };
+
+
+    //! Infinite Scroll
+    const observerRef = useRef(null);
+
+    useEffect(() => {
+        if (!observerRef.current) return;
+
+        const observer =
+            new IntersectionObserver(
+                entries => {
+                    if (
+                        entries[0].isIntersecting &&
+                        hasNextPage &&
+                        !isFetchingNextPage
+                    ) {
+                        fetchNextPage();
+                    }
+                },
+                {
+                    rootMargin: "200px",
+                },
+            );
+
+        observer.observe(
+            observerRef.current,
         );
 
-    const jobs = Array.isArray(data)
-        ? data
-        : data?.jobs || [];
-
+        return () =>
+            observer.disconnect();
+    }, [
+        hasNextPage,
+        isFetchingNextPage,
+        fetchNextPage,
+    ]);
 
     const [unsaveJob] = useUnSaveJobMutation();
     const [saveJob] = useSaveJobMutation();
     const [applyJob] = useApplyToJobMutation();
 
-    const handleFilterChange = (key, value) => {
-        setFilters((prev) => ({ ...prev, [key]: value }))
-    };
-
     const toggleSection = (section) => {
         setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }))
-    };
-
-    const clearAllFilters = () => {
-        setFilters({
-            keyword: "",
-            location: "",
-            category: "",
-            type: "",
-            minSalary: "",
-            maxSalary: ""
-        })
     };
 
     const MobileFilterOverlay = () => (
@@ -113,25 +155,57 @@ const JobSeekerDashboard = () => {
         </div>
     );
 
-    const toggleSaveJobs = async (jobId, isSaved) => {
+    const toggleSaveJobs = async (
+        jobId,
+        isSaved,
+    ) => {
         try {
             if (isSaved) {
                 await unsaveJob(jobId).unwrap();
-                toast.success("Job removed successfully!");
+
+                setAllJobs(prev =>
+                    prev.map(job =>
+                        job._id === jobId
+                            ? {
+                                ...job,
+                                isSaved: false,
+                            }
+                            : job,
+                    ),
+                );
+
+                toast.success(
+                    "Job removed successfully!",
+                );
             } else {
                 await saveJob(jobId).unwrap();
-                toast.success("Job saved successfully!");
+
+                setAllJobs(prev =>
+                    prev.map(job =>
+                        job._id === jobId
+                            ? {
+                                ...job,
+                                isSaved: true,
+                            }
+                            : job,
+                    ),
+                );
+
+                toast.success(
+                    "Job saved successfully!",
+                );
             }
         } catch (err) {
             toast.error(
-                err?.data?.message || "Something went wrong!"
+                err?.data?.message ||
+                "Something went wrong!",
             );
         }
     };
 
     const applyToJob = async (jobId) => {
         try {
-            await applyJob({jobId}).unwrap();
+            await applyJob({ jobId }).unwrap();
             toast.success("Applied to job successfully!");
         } catch (err) {
             toast.error(
@@ -217,6 +291,7 @@ const JobSeekerDashboard = () => {
                                 </div>
                             </div>
 
+
                             {/* Job Grid */}
                             {jobs.length === 0 ? (
                                 <div className="text-center py-16 lg:py-20 bg-white/50 backdrop-blur-xl rounded-2xl border border-white/20">
@@ -249,11 +324,19 @@ const JobSeekerDashboard = () => {
                                             <JobCard
                                                 key={job._id}
                                                 job={job}
-                                                onClick={() => navigate(`/job/${job._id}`)}
-                                                onToggleSave={() => toggleSaveJobs(job._id, job.isSaved)}
+                                                onClick={() => navigate(`/job/${slugify(job.title)}/${job._id}`)}
+                                                onToggleSave={() => toggleSaveJobs(job?._id, job?.isSaved)}
                                                 onApply={() => applyToJob(job._id)}
                                             />
                                         ))}
+                                    </div>
+                                    <div
+                                        ref={observerRef}
+                                        className="h-32 flex items-center justify-center"
+                                    >
+                                        {isFetchingNextPage && (
+                                            <LoaderCircle className="w-5 h-5 animate-spin text-blue-600" />
+                                        )}
                                     </div>
                                 </>
                             )}

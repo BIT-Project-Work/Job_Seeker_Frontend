@@ -6,6 +6,12 @@ export const validateEmail = (email) => {
     return '';
 }
 
+export const slugify = (text) =>
+    text
+        .toLowerCase()
+        .replace(/[^\w\s-]/g, "")
+        .replace(/\s+/g, "-");
+
 export const validatePassword = (password) => {
     if (!password) return 'Password is required';
     if (password.length < 8) return "Password must be atleast 8 characters.";

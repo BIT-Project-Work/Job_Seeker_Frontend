@@ -6,21 +6,23 @@ import toast from "react-hot-toast"
 import DashboardLayout from "../../components/layout/DashboardLayout"
 import EditProfileDetails from "./EditProfileDetails"
 import { useUpdateProfileMutation } from "../../store/slices/userSlice"
-import { useUploadImage } from "../../utils/imageUpload"
+import { useFileUpload } from "../../utils/imageUpload"
 
 const EmployeeProfilePage = () => {
 
     const { user } = useAuth();
 
-    const { uploadImage } = useUploadImage();
+    const { uploadFile } = useFileUpload();
 
     const [profileData, setProfileData] = useState({
         name: user?.name || "",
         email: user?.email || "",
         avatar: user?.avatar || "",
+        avatarPublicId: user?.avatarPublicId || "",
         companyName: user?.companyName || "",
         companyDescription: user?.companyDescription || "",
         companyLogo: user?.companyLogo || "",
+        companyLogoPublicId: user?.companyLogoPublicId || "",
     });
 
     useEffect(() => {
@@ -29,9 +31,11 @@ const EmployeeProfilePage = () => {
                 name: user.name || "",
                 email: user.email || "",
                 avatar: user.avatar || "",
+                avatarPublicId: user.avatarPublicId || "",
                 companyName: user.companyName || "",
                 companyDescription: user.companyDescription || "",
                 companyLogo: user.companyLogo || "",
+                companyLogoPublicId: user.companyLogoPublicId || "",
             });
         }
     }, [user]);
@@ -52,30 +56,36 @@ const EmployeeProfilePage = () => {
         setUploading((prev) => ({ ...prev, [type]: true }))
 
         try {
-            const imgUploadRes = await uploadImage(file);
-            const avatarUrl = imgUploadRes.imageUrl || "";
+            const result = await uploadFile(type === "avatar" ? "avatar" : "companyLogo", file);
 
-            // Update form data with new image url
-            const field = type === "avatar" ? "avatar" : "companyLogo"
-            handleInputChange(field, avatarUrl)
+            if (type === "avatar") {
+                setFormData(prev => ({ ...prev, avatar: result.url, avatarPublicId: result.publicId }));
+            } else {
+                setFormData(prev => ({ ...prev, companyLogo: result.url, companyLogoPublicId: result.publicId }));
+            }
         } catch (error) {
             console.error("Image upload failed:", error);
+
+            toast.error("Upload failed");
         } finally {
-            setUploading((prev) => ({ ...prev, [type]: false }))
+            setUploading(prev => ({ ...prev, [type]: false }));
         }
     };
 
     const handleImageChange = (e, type) => {
         const file = e.target.files[0];
-        if (file) {
-            // Create preview Url
-            const previewUrl = URL.createObjectURL(file);
-            const field = type === "avatar" ? "avatar" : "companyLogo";
-            handleInputChange(field, previewUrl)
 
-            // Upload Image
-            handleImageUpload(file, type)
+        if (!file) return;
+
+        const previewUrl = URL.createObjectURL(file);
+
+        if (type === "avatar") {
+            setFormData(prev => ({ ...prev, avatar: previewUrl }));
+        } else {
+            setFormData(prev => ({ ...prev, companyLogo: previewUrl }));
         }
+
+        handleImageUpload(file, type);
     };
 
     const [updateProfile] = useUpdateProfileMutation();

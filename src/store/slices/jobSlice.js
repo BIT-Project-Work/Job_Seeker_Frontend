@@ -13,11 +13,39 @@ export const jobSlice = apiSlice.injectEndpoints({
         }),
 
         // 👥 Get all jobs
-        getJobsWithFilters: builder.query({
-            query: (filters) => ({
-                url: "/jobs",
-                params: filters,
-            }),
+        // getJobsWithFilters: builder.query({
+        //     query: (filters) => ({
+        //         url: "/jobs",
+        //         params: filters,
+        //     }),
+        //     providesTags: ["Job"],
+        // }),
+
+        getJobsWithFilters: builder.infiniteQuery({
+            infiniteQueryOptions: {
+                initialPageParam: 1,
+
+                getNextPageParam: (
+                    lastPage,
+                    allPages,
+                    lastPageParam
+                ) =>
+                    lastPage.pagination.hasNextPage
+                        ? lastPageParam + 1
+                        : undefined,
+            },
+
+            query({ pageParam, queryArg }) {
+                return {
+                    url: "/jobs",
+                    params: {
+                        ...queryArg,
+                        page: pageParam,
+                        limit: 10,
+                    },
+                };
+            },
+
             providesTags: ["Job"],
         }),
 
@@ -61,8 +89,9 @@ export const jobSlice = apiSlice.injectEndpoints({
                     url: `/jobs/${id}`,
                     method: "PATCH",
                     body: data,
-                }},
-                    invalidatesTags: ["Job", "Analytics"],
+                }
+            },
+            invalidatesTags: ["Job", "Analytics"],
         }),
 
         // ✏️ Update job
@@ -82,14 +111,12 @@ export const jobSlice = apiSlice.injectEndpoints({
             }),
             invalidatesTags: ["Job", "Analytics"],
         }),
-
-
     })
 })
 
 export const {
     useGetAllJobsQuery,
-    useGetJobsWithFiltersQuery,
+    useGetJobsWithFiltersInfiniteQuery,
     useGetJobByIdQuery,
     useGetJobsEmployerQuery,
     useCreateJobMutation,
@@ -97,3 +124,7 @@ export const {
     useUpdateJobMutation,
     useCloseJobMutation
 } = jobSlice;
+
+// console.log(
+//     jobSlice.endpoints
+// );

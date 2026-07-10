@@ -14,10 +14,13 @@ import StatusBadge from '../../components/StatusBadge'
 import toast from 'react-hot-toast'
 import { useGetJobByIdQuery } from '../../store/slices/jobSlice'
 import { useApplyToJobMutation } from '../../store/slices/applicationSlice'
+import { useEffect } from 'react'
+import { Helmet } from "react-helmet-async";
+import { slugify } from '../../utils/helper'
 
 const JobDetails = () => {
 
-    const { jobId } = useParams();
+    const { slug, jobId } = useParams();
 
     const { user } = useAuth();
 
@@ -27,6 +30,29 @@ const JobDetails = () => {
         { jobId, userId: user?._id || "" },
         { skip: !jobId }
     );
+
+    useEffect(() => {
+        if (jobDetails?.title) {
+            document.title = `${jobDetails.title} | JobSeeker`;
+        }
+
+        return () => {
+            document.title = "JobSeeker";
+        };
+    }, [jobDetails]);
+
+    useEffect(() => {
+        if (!jobDetails) return;
+
+        const correctSlug = slugify(jobDetails?.title);
+
+        if (slug !== correctSlug) {
+            navigate(
+                `/job/${correctSlug}/${jobDetails._id}`,
+                { replace: true }
+            );
+        }
+    }, [jobDetails, slug, navigate]);
 
     const [applyJob] = useApplyToJobMutation()
 
@@ -44,6 +70,40 @@ const JobDetails = () => {
         }
     }
 
+    <Helmet>
+        <title>{jobDetails?.title} | JobSeeker</title>
+
+        <meta
+            name="description"
+            content={jobDetails?.description?.slice(0, 160)}
+        />
+
+        <meta
+            property="og:title"
+            content={jobDetails?.title}
+        />
+
+        <meta
+            property="og:description"
+            content={jobDetails?.description?.slice(0, 200)}
+        />
+
+        <meta
+            property="og:image"
+            content={jobDetails?.company?.companyLogo}
+        />
+
+        <meta
+            property="og:type"
+            content="website"
+        />
+
+        <meta
+            property="og:url"
+            content={`https://jobseeker.lemongautam.com.np/jobs/${jobId}`}
+        />
+    </Helmet>
+
     return (
         <div className="bg-linear-to-br from-blue-50 via-white to-purple-50">
             <Navbar />
@@ -54,7 +114,7 @@ const JobDetails = () => {
                     <div className="flex items-center gap-4 mb-4 sm:mb-0">
                         <button
                             className="group flex items-center space-x-2 px-3 py-2 text-sm font-medium text-gray-600 hover:text-white bg-white/50 hover:bg-linear-to-r hover:from-blue-500 hover:to-blue-600 border border-gray-200 hover:border-transparent rounded-xl transition-all duration-300 shadow-lg shadow-gray-100 hover:shadow-xl "
-                            onClick={() => navigate("/find-jobs")}
+                            onClick={() => navigate(-1)}
                         >
                             <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
                             <span>Back</span>

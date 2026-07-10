@@ -47,7 +47,7 @@ const AppRoutes = () => {
                 <Route path="/reset_password" element={<ResetPassword />} />
 
                 <Route path="/find-jobs" element={<JobSeekerDashboard />} />
-                <Route path="/job/:jobId" element={<JobDetails />} />
+                <Route path="/job/:slug/:jobId" element={<JobDetails />} />
                 <Route path="/saved-jobs" element={<SavedJobs />} />
                 <Route path="/profile" element={<UserProfile />} />
 

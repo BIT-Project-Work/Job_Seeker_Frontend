@@ -98,14 +98,37 @@ export const authApiSlice = apiSlice.injectEndpoints({
             invalidatesTags: ["Auth", "User"],
         }),
 
-        // Upload Image
+        // Upload Avatar
         avatarUpload: builder.mutation({
             query: (data) => ({
-                url: "/auth/upload_image",
+                url: "/auth/upload/avatar",
                 method: "POST",
                 body: data,
             }),
+            invalidatesTags: ["Auth", "User"],
         }),
+
+        // Upload Resume
+        resumeUpload: builder.mutation({
+            query: (data) => ({
+                url: "/auth/upload/resume",
+                method: "POST",
+                body: data,
+            }),
+            invalidatesTags: ["Auth", "User"],
+        }),
+
+        // Upload CompanyLogo
+        companyLogoUpload: builder.mutation({
+            query: (data) => ({
+                url: "/auth/upload/company-logo",
+                method: "POST",
+                body: data,
+            }),
+            invalidatesTags: ["Auth", "User"],
+        }),
+
+
     }),
 });
 
@@ -118,8 +141,10 @@ export const {
     useResetPasswordMutation,
     useMeQuery,
     useLogoutMutation,
-    useAvatarUploadMutation,
     useResendForgotPasswordOtpMutation,
     useResendVerificationOtpMutation,
-    useRefreshMutation
+    useRefreshMutation,
+    useAvatarUploadMutation,
+    useResumeUploadMutation,
+    useCompanyLogoUploadMutation
 } = authApiSlice;

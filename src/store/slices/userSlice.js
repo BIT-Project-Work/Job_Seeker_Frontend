@@ -31,7 +31,7 @@ export const userSlice = apiSlice.injectEndpoints({
                 method: "PATCH",
                 body: data,
             }),
-            invalidatesTags: ["User"],
+            invalidatesTags: ["User", "Auth"],
         }),
 
         // ✏️ Update user

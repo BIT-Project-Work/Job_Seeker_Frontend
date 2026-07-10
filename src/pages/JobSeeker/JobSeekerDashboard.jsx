@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Search, Filter, Grid, List, X } from 'lucide-react'
+import { Search, Filter, Grid, List, X, LoaderCircle } from 'lucide-react'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
@@ -90,24 +90,40 @@ const JobSeekerDashboard = () => {
         setSearchParams({});
     };
 
+
+    //! Infinite Scroll
     const observerRef = useRef(null);
 
     useEffect(() => {
         if (!observerRef.current) return;
 
         const observer = new IntersectionObserver(
-            entries => {
+            (entries) => {
+                // console.log(
+                //     "observer fired:",
+                //     entries[0].isIntersecting,
+                // );
+
+                // console.log(
+                //     observerRef.current?.getBoundingClientRect(),
+                // );
+
                 if (
                     entries[0].isIntersecting &&
                     data?.pagination?.hasNextPage &&
                     !isFetching
                 ) {
-                    const params = new URLSearchParams(
-                        searchParams,
-                    );
+                    // console.log(
+                    //     "Loading page:",
+                    //     page + 1,
+                    // );
 
-                    params.set(
-                        "page",
+                    const params =
+                        new URLSearchParams(
+                            searchParams,
+                        );
+
+                    params.set("page",
                         String(page + 1),
                     );
 
@@ -115,18 +131,21 @@ const JobSeekerDashboard = () => {
                 }
             },
             {
-                threshold: 0.5,
+                rootMargin: "200px",
+                threshold: 0,
             },
         );
 
-        observer.observe(observerRef.current);
+        observer.observe(
+            observerRef.current,
+        );
 
-        return () => observer.disconnect();
+        return () =>
+            observer.disconnect();
     }, [
         page,
         isFetching,
         data?.pagination?.hasNextPage,
-        searchParams,
     ]);
 
     const jobs = allJobs;
@@ -345,10 +364,10 @@ const JobSeekerDashboard = () => {
                                     </div>
                                     <div
                                         ref={observerRef}
-                                        className="h-10 flex items-center justify-center"
+                                        className="h-32 flex items-center justify-center"
                                     >
                                         {isFetching && (
-                                            <LoadingSpinner />
+                                            <LoaderCircle className="w-5 h-5 animate-spin text-blue-600"/>
                                         )}
                                     </div>
                                 </>

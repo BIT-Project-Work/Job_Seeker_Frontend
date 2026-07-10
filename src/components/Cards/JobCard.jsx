@@ -9,8 +9,8 @@ const JobCard = ({ job, onClick, onToggleSave, onApply, saved, hideApply }) => {
 
     const formatSalary = (min) => {
         const formatNumber = (num) => {
-            if (num >= 1000) return `$${(num / 1000).toFixed(0)}k`;
-            return `$${num}`
+            if (num >= 1000) return `₹${(num / 1000).toFixed(0)}k`;
+            return `₹${num}`
         };
         return `${formatNumber(min)}/m`
     };
@@ -110,7 +110,7 @@ const JobCard = ({ job, onClick, onToggleSave, onApply, saved, hideApply }) => {
             <div className="mb-5">
                 <div className="flex items-center gap-2 text-xs">
                     <span className="flex items-center gap-1.5 bg-gray-100 text-gray-700 px-3 py-1 rounded-full font-medium">
-                        <MapPin className="" />
+                        <MapPin className="w-3.5 h-3.5" />
                         {job?.location}
                     </span>
                     <span

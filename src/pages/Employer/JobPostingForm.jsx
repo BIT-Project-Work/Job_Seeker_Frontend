@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import {
     AlertCircle,
     MapPin,
-    DollarSign,
+    IndianRupee,
     Briefcase,
     Users,
     Eye,
@@ -228,7 +228,7 @@ const JobPostingForm = () => {
                                 <InputField
                                     label="Location"
                                     id="location"
-                                    placeholder="e.g., New York, NY"
+                                    placeholder="e.g., New York"
                                     value={formData.location}
                                     onChange={(e) => handleInputChange("location", e.target.value)}
                                     error={errors.location}
@@ -321,7 +321,7 @@ const JobPostingForm = () => {
                                 <div className="grid grid-cols-3 gap-3">
                                     <div className="relative">
                                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
-                                            <DollarSign className="w-5 h-5 text-gray-400" />
+                                            <IndianRupee className="w-5 h-5 text-gray-400" />
                                         </div>
                                         <input
                                             type="number"
@@ -333,7 +333,7 @@ const JobPostingForm = () => {
                                     </div>
                                     <div className="relative">
                                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
-                                            <DollarSign className="w-5 h-5 text-gray-400" />
+                                            <IndianRupee className="w-5 h-5 text-gray-400" />
                                         </div>
                                         <input
                                             type="number"

@@ -10,6 +10,7 @@ import Navbar from '../../components/layout/Navbar'
 import JobCard from '../../components/Cards/JobCard'
 import toast from 'react-hot-toast'
 import { useGetUserSavedJobsQuery, useUnSaveJobMutation } from '../../store/slices/savedJobSlice'
+import { slugify } from '../../utils/helper'
 
 const SavedJobs = () => {
 
@@ -103,7 +104,7 @@ const SavedJobs = () => {
                                             <JobCard
                                                 key={savedJob._id}
                                                 job={savedJob?.job}
-                                                onClick={() => navigate(`/job/${savedJob?.job._id}`)}
+                                                onClick={() => navigate(`/job/${slugify(savedJob?.job.title)}/${savedJob?.job._id}`)}
                                                 onToggleSave={() => handleUnsaveJob(savedJob?.job._id)}
                                                 saved
                                             />

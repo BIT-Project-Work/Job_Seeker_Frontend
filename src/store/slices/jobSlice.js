@@ -21,47 +21,31 @@ export const jobSlice = apiSlice.injectEndpoints({
         //     providesTags: ["Job"],
         // }),
 
-        getJobsWithFilters: builder.query({
-            query: ({
-                page = 1,
-                limit = 10,
-                ...params
-            }) => ({
-                url: "/jobs",
-                params: {
-                    ...params,
-                    page,
-                    limit,
-                },
-            }),
+        getJobsWithFilters: builder.infiniteQuery({
+            infiniteQueryOptions: {
+                initialPageParam: 1,
 
-            serializeQueryArgs: ({ endpointName, queryArgs }) => {
-                const { page, ...rest } = queryArgs;
+                getNextPageParam: (
+                    lastPage,
+                    allPages,
+                    lastPageParam
+                ) =>
+                    lastPage.pagination.hasNextPage
+                        ? lastPageParam + 1
+                        : undefined,
+            },
+
+            query({ pageParam, queryArg }) {
                 return {
-                    endpointName,
-                    ...rest,
+                    url: "/jobs",
+                    params: {
+                        ...queryArg,
+                        page: pageParam,
+                        limit: 10,
+                    },
                 };
             },
 
-            merge: (currentCache, newItems, { arg }) => {
-                if (arg.page === 1) {
-                    currentCache.jobs = newItems.jobs;
-                } else {
-                    currentCache.jobs.push(
-                        ...newItems.jobs,
-                    );
-                }
-
-                currentCache.pagination =
-                    newItems.pagination;
-            },
-
-            forceRefetch({ currentArg, previousArg }) {
-                return (
-                    currentArg?.page !==
-                    previousArg?.page
-                );
-            },
             providesTags: ["Job"],
         }),
 
@@ -127,14 +111,12 @@ export const jobSlice = apiSlice.injectEndpoints({
             }),
             invalidatesTags: ["Job", "Analytics"],
         }),
-
-
     })
 })
 
 export const {
     useGetAllJobsQuery,
-    useGetJobsWithFiltersQuery,
+    useGetJobsWithFiltersInfiniteQuery,
     useGetJobByIdQuery,
     useGetJobsEmployerQuery,
     useCreateJobMutation,
@@ -142,3 +124,7 @@ export const {
     useUpdateJobMutation,
     useCloseJobMutation
 } = jobSlice;
+
+// console.log(
+//     jobSlice.endpoints
+// );

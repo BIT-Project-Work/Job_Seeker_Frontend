@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react';
 import { validateAvatar, validateEmail, validatePassword } from '../../utils/helper';
-import { useUploadImage } from '../../utils/imageUpload'
+// import { useUploadImage } from '../../utils/imageUpload'
 import { useRegisterMutation } from '../../store/slices/authApiSlice';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -27,21 +27,21 @@ const SignUp = () => {
 
     const [register, { isLoading }] = useRegisterMutation();
 
-    const { uploadImage } = useUploadImage();
+    // const { uploadImage } = useUploadImage();
 
     const [formData, setFormData] = useState({
         fullName: '',
         email: '',
         password: '',
         role: '',
-        avatar: null
+        // avatar: null
     });
 
     const [formState, setFormState] = useState({
         loading: false,
         errors: {},
         showPassword: false,
-        avatarPreview: null,
+        // avatarPreview: null,
         success: false
     })
 
@@ -72,32 +72,32 @@ const SignUp = () => {
         }
     }
 
-    const handleAvatarChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const error = validateAvatar(file);
-            if (error) {
-                setFormState((prev) => ({
-                    ...prev,
-                    errors: { ...prev.errors, avatar: error }
-                }));
-                return;
-            }
+    // const handleAvatarChange = (e) => {
+    //     const file = e.target.files[0];
+    //     if (file) {
+    //         const error = validateAvatar(file);
+    //         if (error) {
+    //             setFormState((prev) => ({
+    //                 ...prev,
+    //                 errors: { ...prev.errors, avatar: error }
+    //             }));
+    //             return;
+    //         }
 
-            setFormData((prev) => ({ ...prev, avatar: file }))
+    //         setFormData((prev) => ({ ...prev, avatar: file }))
 
-            // Create preview
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                setFormState((prev) => ({
-                    ...prev,
-                    avatarPreview: e.target.result,
-                    errors: { ...prev.errors, avatar: "" }
-                }));
-            };
-            reader.readAsDataURL(file);
-        }
-    };
+    //         // Create preview
+    //         const reader = new FileReader();
+    //         reader.onload = (e) => {
+    //             setFormState((prev) => ({
+    //                 ...prev,
+    //                 avatarPreview: e.target.result,
+    //                 errors: { ...prev.errors, avatar: "" }
+    //             }));
+    //         };
+    //         reader.readAsDataURL(file);
+    //     }
+    // };
 
     const validateForm = () => {
         const errors = {
@@ -125,13 +125,13 @@ const SignUp = () => {
         setFormState((prev) => ({ ...prev, loading: true }))
 
         try {
-            let avatarUrl = "";
+            // let avatarUrl = "";
 
-            // Upload image if present
-            if (formData.avatar) {
-                const imgUploadRes = await uploadImage(formData.avatar);
-                avatarUrl = imgUploadRes.imageUrl || "";
-            }
+            // // Upload image if present
+            // if (formData.avatar) {
+            //     const imgUploadRes = await uploadImage(formData.avatar);
+            //     avatarUrl = imgUploadRes.imageUrl || "";
+            // }
 
             //! RTK Query
             const data = await register({
@@ -139,7 +139,7 @@ const SignUp = () => {
                 email: formData.email,
                 password: formData.password,
                 role: formData.role,
-                avatar: avatarUrl || "",
+                // avatar: avatarUrl || "",
             }).unwrap();
 
             localStorage.setItem('email', formData.email)
@@ -275,7 +275,7 @@ const SignUp = () => {
                     </div>
 
                     {/* Avatar Upload */}
-                    <div>
+                    {/* <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                             Profile Picture (Optional)
                         </label>
@@ -312,7 +312,7 @@ const SignUp = () => {
                                 {formState.errors.avatar}
                             </p>
                         )}
-                    </div>
+                    </div> */}
 
                     {/* Role Selection */}
                     <div>

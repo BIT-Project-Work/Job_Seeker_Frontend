@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { Search, Filter, Grid, List, X, LoaderCircle } from 'lucide-react'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import { useNavigate, useSearchParams } from 'react-router-dom'
@@ -10,7 +10,8 @@ import Navbar from '../../components/layout/Navbar'
 import JobCard from '../../components/Cards/JobCard'
 import { useSaveJobMutation, useUnSaveJobMutation } from '../../store/slices/savedJobSlice'
 import { useApplyToJobMutation } from '../../store/slices/applicationSlice'
-import { useGetJobsWithFiltersQuery } from '../../store/slices/jobSlice'
+import { useGetJobsWithFiltersInfiniteQuery } from '../../store/slices/jobSlice'
+import { slugify } from '../../utils/helper'
 
 const JobSeekerDashboard = () => {
 
@@ -37,40 +38,32 @@ const JobSeekerDashboard = () => {
         maxSalary: searchParams.get("maxSalary") ?? "",
     };
 
-    const page = Number(searchParams.get("page") ?? 1);
+    // const page = Number(searchParams.get("page") ?? 1);
 
     const {
         data,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
         isLoading,
-        isFetching,
-    } = useGetJobsWithFiltersQuery({
+    } = useGetJobsWithFiltersInfiniteQuery({
         ...filters,
-        page,
-        limit: 10,
-        ...(user?._id && { userId: user._id }),
+        ...(user?._id && {
+            userId: user._id,
+        }),
     });
 
-    const [allJobs, setAllJobs] = useState([]);
+    const jobs = useMemo(() => {
+        const map = new Map();
 
-    useEffect(() => {
-        if (!data?.jobs) return;
-
-        if (page === 1) {
-            setAllJobs(data.jobs);
-        } else {
-            setAllJobs(prev => {
-                const existingIds = new Set(
-                    prev.map(job => job._id),
-                );
-
-                const newJobs = data.jobs.filter(
-                    job => !existingIds.has(job._id),
-                );
-
-                return [...prev, ...newJobs];
+        data?.pages.forEach(page => {
+            page.jobs.forEach(job => {
+                map.set(job._id, job);
             });
-        }
-    }, [data, page]);
+        });
+
+        return [...map.values()];
+    }, [data]);
 
     const handleFilterChange = (key, value) => {
         const params = new URLSearchParams(searchParams);
@@ -97,44 +90,21 @@ const JobSeekerDashboard = () => {
     useEffect(() => {
         if (!observerRef.current) return;
 
-        const observer = new IntersectionObserver(
-            (entries) => {
-                // console.log(
-                //     "observer fired:",
-                //     entries[0].isIntersecting,
-                // );
-
-                // console.log(
-                //     observerRef.current?.getBoundingClientRect(),
-                // );
-
-                if (
-                    entries[0].isIntersecting &&
-                    data?.pagination?.hasNextPage &&
-                    !isFetching
-                ) {
-                    // console.log(
-                    //     "Loading page:",
-                    //     page + 1,
-                    // );
-
-                    const params =
-                        new URLSearchParams(
-                            searchParams,
-                        );
-
-                    params.set("page",
-                        String(page + 1),
-                    );
-
-                    setSearchParams(params);
-                }
-            },
-            {
-                rootMargin: "200px",
-                threshold: 0,
-            },
-        );
+        const observer =
+            new IntersectionObserver(
+                entries => {
+                    if (
+                        entries[0].isIntersecting &&
+                        hasNextPage &&
+                        !isFetchingNextPage
+                    ) {
+                        fetchNextPage();
+                    }
+                },
+                {
+                    rootMargin: "200px",
+                },
+            );
 
         observer.observe(
             observerRef.current,
@@ -143,12 +113,10 @@ const JobSeekerDashboard = () => {
         return () =>
             observer.disconnect();
     }, [
-        page,
-        isFetching,
-        data?.pagination?.hasNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+        fetchNextPage,
     ]);
-
-    const jobs = allJobs;
 
     const [unsaveJob] = useUnSaveJobMutation();
     const [saveJob] = useSaveJobMutation();
@@ -356,7 +324,7 @@ const JobSeekerDashboard = () => {
                                             <JobCard
                                                 key={job._id}
                                                 job={job}
-                                                onClick={() => navigate(`/job/${job._id}`)}
+                                                onClick={() => navigate(`/job/${slugify(job.title)}/${job._id}`)}
                                                 onToggleSave={() => toggleSaveJobs(job?._id, job?.isSaved)}
                                                 onApply={() => applyToJob(job._id)}
                                             />
@@ -366,8 +334,8 @@ const JobSeekerDashboard = () => {
                                         ref={observerRef}
                                         className="h-32 flex items-center justify-center"
                                     >
-                                        {isFetching && (
-                                            <LoaderCircle className="w-5 h-5 animate-spin text-blue-600"/>
+                                        {isFetchingNextPage && (
+                                            <LoaderCircle className="w-5 h-5 animate-spin text-blue-600" />
                                         )}
                                     </div>
                                 </>
